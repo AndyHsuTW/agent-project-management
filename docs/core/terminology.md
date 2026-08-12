@@ -1,6 +1,6 @@
 # Canonical PM Terminology
 
-> Status: M1 / PM-P01 / PLAN01 — Ready for review
+> Status: M1 / PM-P01 / PLAN01 — Ready for re-review
 >
 > Purpose: Define the canonical vocabulary used by the AI-assisted Project Management Skills. All PM skills, adapters, examples, and project artifacts should use these terms consistently unless a later approved contract version explicitly changes them.
 
@@ -13,6 +13,7 @@
 5. Urgency does not imply scope membership.
 6. Package identity does not encode execution order.
 7. Child resources should not duplicate ownership metadata that can be derived from their parent unless an adapter requires a denormalized projection.
+8. A domain resource name and a workflow status must not share ambiguous semantics.
 
 ---
 
@@ -22,7 +23,7 @@
 
 The top-level body of work being managed.
 
-A Project provides the durable context in which Milestones, Packages, Planning Items, Discoveries, and Backlog items exist.
+A Project provides the durable context in which Milestones, Packages, Planning Items, Discoveries, Requests, Spikes, and Project Backlog items exist.
 
 A Project is not itself an execution status or a delivery boundary.
 
@@ -89,15 +90,19 @@ A newly proposed need, idea, feature, change, or one-off piece of work that has 
 
 A Request may originate from a user, stakeholder, agent, review, or another system.
 
-A Request can later be accepted, deferred to Backlog, rejected, or converted into another work resource after triage.
+A Request can later be accepted, retained in the Project Backlog, rejected, or converted into another work resource after triage.
 
-### Backlog
+### Project Backlog
 
-The ordered or unordered pool of retained work that is considered potentially valuable but is not currently committed to active Milestone execution.
+The retained pool of potentially valuable work that is not currently committed to an active Milestone or other explicitly approved execution scope.
 
-Backlog is a planning state, not evidence that the work is low value.
+Project Backlog is a **scope / commitment concept**, not a workflow Status.
 
-A Backlog item may later be prioritized and assigned to a Milestone or work stream.
+A Project Backlog item may later be prioritized and accepted into a Milestone or another work stream.
+
+Canonical distinction:
+
+> PROJECT BACKLOG ≠ STATUS: BACKLOG
 
 ### Spike
 
@@ -130,7 +135,7 @@ The defining question is:
 
 If the answer is no and evidence is sufficient, the work is a candidate Scope Change.
 
-A Scope Change changes the Milestone baseline and therefore requires the configured approval policy.
+A Scope Change changes the Milestone baseline and therefore is subject to the configured approval policy.
 
 ### Interruption
 
@@ -159,7 +164,7 @@ Typical reasons include:
 - no meaningful project impact,
 - intentionally not pursued.
 
-Reject must not be used merely because work is not urgent; valuable non-urgent work belongs in Backlog.
+Reject must not be used merely because work is not urgent; valuable non-urgent work belongs in the Project Backlog.
 
 ---
 
@@ -201,6 +206,21 @@ Canonical distinction:
 
 > Exit Criteria govern Milestone closure; Acceptance Criteria govern work-item acceptance.
 
+### Review Result
+
+The explicit outcome of a review against Acceptance Criteria or another defined review target.
+
+A Review Result describes the reviewer recommendation; it is **not** a workflow Status.
+
+Canonical review outcomes are expected to include at least:
+
+- `ACCEPT`
+- `REVISE`
+
+A `REVISE` result normally returns the work item from `Review` to `In Progress`; it does not require a separate `Revision Required` workflow Status.
+
+The full review response structure, finding format, severity rules, and re-review rules are defined by the Review Contract rather than by this terminology document.
+
 ---
 
 ## 6. Scheduling and execution dimensions
@@ -211,14 +231,16 @@ The current workflow state of a tracked work item.
 
 Canonical M1 statuses:
 
-- **Backlog** — retained but not currently ready for execution.
+- **Backlog** — a tracked work item is not currently ready for execution. This Status does not indicate whether the item is inside or outside a Milestone scope.
 - **Ready** — accepted and actionable now.
 - **In Progress** — actively being worked on.
 - **Blocked** — cannot proceed because of an unresolved dependency, decision, incident, or other constraint.
 - **Review** — implementation or drafting is complete and awaiting validation or acceptance.
 - **Done** — acceptance criteria have been satisfied and the item is complete.
 
-Status describes workflow state. It does not define scope or priority.
+Status describes workflow state. It does not define scope, commitment, or priority.
+
+In particular, a Package already committed to a Milestone may legitimately have `Status = Backlog` while waiting for execution.
 
 ### Priority
 
@@ -332,7 +354,7 @@ A Recommendation is not an approved decision unless policy explicitly permits au
 
 Explicit authorization required by policy before a governed project mutation is performed.
 
-Typical approval states:
+Typical approval states may include:
 
 - `pending`
 - `approved`
@@ -341,16 +363,11 @@ Typical approval states:
 
 ### Human Approval Gate
 
-The policy boundary that prevents an Agent from performing specified project mutations until a human approves them.
+The policy boundary that prevents an Agent from performing a governed project mutation until the applicable approval requirement has been satisfied.
 
-M1 baseline policy:
+This terminology document defines what an Approval and Human Approval Gate mean. It does **not** define which actions require approval.
 
-- Discovery capture: no approval required.
-- Scope Change: human approval required.
-- Interruption: human approval required.
-- Backlog capture: configurable / normally allowed.
-- Spike creation: configurable / normally allowed when bounded.
-- Milestone close: human approval required.
+The authoritative approval matrix and autonomous-action policy are defined by `docs/core/approval-policy.md` when PM-P01-PLAN05 is completed.
 
 ---
 
@@ -364,13 +381,15 @@ The following distinctions are normative:
 | Package | Planning Item | Package is the stable work unit; Planning Item is its independently trackable decomposition. |
 | Planning Item | Checklist Item | Planning has an independent lifecycle when needed; Checklist is lightweight execution detail. |
 | Discovery | Accepted Work | Discovery captures information; triage decides whether work is accepted. |
-| Request | Backlog | Request is incoming proposed work; Backlog is retained but not actively committed work. |
+| Request | Project Backlog | Request is incoming proposed work; Project Backlog is retained work not committed to active Milestone scope. |
+| Project Backlog | Status: Backlog | Project Backlog describes commitment/scope; Status: Backlog describes workflow readiness. |
 | Scope Change | Interruption | Scope Change modifies current Milestone scope; Interruption changes immediate execution priority while scope stays unchanged. |
 | Scope Change | Spike | Scope Change is a decision with sufficient evidence; Spike gathers evidence when the decision is not yet justified. |
-| Backlog | Reject | Backlog retains potentially valuable work; Reject intentionally stops tracking it as actionable work. |
+| Project Backlog | Reject | Project Backlog retains potentially valuable work; Reject intentionally stops tracking it as actionable work. |
 | Status | Priority | Status describes workflow state; Priority describes relative importance. |
 | Priority | Urgency | Priority is comparative ordering; Urgency is time sensitivity / consequence of delay. |
 | Priority | Sequence | Priority influences what should be preferred; Sequence records planned relative execution order. |
+| Review Result | Status | Review Result is the outcome of a review; Status is the current workflow state. |
 | Exit Criteria | Acceptance Criteria | Exit Criteria close a Milestone; Acceptance Criteria validate a specific work item. |
 | Parent / Child | Dependency | Parent / Child is structural decomposition; dependency is an execution constraint. |
 | Discovered In | Ownership | Discovered In records provenance; ownership determines where accepted work belongs. |
@@ -387,11 +406,13 @@ All PM skills must preserve these invariants unless an approved future contract 
 3. **FOUND DURING MILESTONE ≠ BELONGS TO MILESTONE**
 4. **UNKNOWN ≠ IMPLEMENT NOW**
 5. **PACKAGE ID ≠ EXECUTION ORDER**
-6. A Scope Change must not be silently introduced by an Agent.
-7. An Interruption must not be represented as a Scope Change merely because it is urgent.
-8. A Planning Item should not duplicate Milestone ownership when that ownership is inherited from its Package.
-9. Recommendation and approval are distinct states.
-10. Status, Priority, Urgency, Sequence, and Scope are separate dimensions.
+6. **PROJECT BACKLOG ≠ STATUS: BACKLOG**
+7. A Scope Change must not be silently introduced by an Agent.
+8. An Interruption must not be represented as a Scope Change merely because it is urgent.
+9. A Planning Item should not duplicate Milestone ownership when that ownership is inherited from its Package.
+10. Recommendation and approval are distinct states.
+11. Review Result and workflow Status are distinct states.
+12. Status, Priority, Urgency, Sequence, and Scope are separate dimensions.
 
 ---
 
@@ -408,7 +429,9 @@ For the initial GitHub implementation, expected mappings include:
 | Package | GitHub Issue + `Work Type = Package` |
 | Planning Item | GitHub Sub-issue + `Work Type = Planning` |
 | Checklist Item | Markdown task item |
+| Project Backlog | Tracked Issue/Request outside active Milestone scope, represented according to adapter policy |
 | Status | GitHub Project `Status` field |
+| Status: Backlog | GitHub Project `Status = Backlog` |
 | Priority | GitHub Project `Priority` field |
 | Sequence | GitHub Project `Sequence` number field |
 | Parent / Child | GitHub Parent issue / Sub-issue relationship |
