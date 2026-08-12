@@ -1,6 +1,6 @@
 # Canonical PM Terminology
 
-> Status: M1 / PM-P01 / PLAN01
+> Status: M1 / PM-P01 / PLAN01 — Ready for review
 >
 > Purpose: Define the canonical vocabulary used by the AI-assisted Project Management Skills. All PM skills, adapters, examples, and project artifacts should use these terms consistently unless a later approved contract version explicitly changes them.
 
