@@ -14,6 +14,8 @@
 6. Package identity does not encode execution order.
 7. Child resources should not duplicate ownership metadata that can be derived from their parent unless an adapter requires a denormalized projection.
 8. A domain resource name and a workflow status must not share ambiguous semantics.
+9. Workflow state changes are governed actions; UI capability alone does not grant transition authority.
+10. Resource creation is incomplete until required structural relationships are established and verified.
 
 ---
 
@@ -57,6 +59,8 @@ A child work item that describes a concrete piece of planning or implementation 
 A Planning Item may have its own status, acceptance criteria, blocker state, and implementation details when independent tracking is useful.
 
 A Planning Item is not automatically a separate Milestone scope item; its scope membership is inherited through its parent Package unless the project model explicitly states otherwise.
+
+Every Planning Item must have exactly one **Parent Package**. A Planning Item without a Parent Package is an orphaned / invalid state and must not be treated as successfully created.
 
 ### Checklist Item
 
@@ -219,7 +223,7 @@ Canonical review outcomes are expected to include at least:
 
 A `REVISE` result normally returns the work item from `Review` to `In Progress`; it does not require a separate `Revision Required` workflow Status.
 
-The full review response structure, finding format, severity rules, and re-review rules are defined by the Review Contract rather than by this terminology document.
+The full review response structure, finding format, severity rules, re-review rules, and transition matrix are defined by the Workflow / Review Contract rather than by this terminology document.
 
 ---
 
@@ -238,9 +242,41 @@ Canonical M1 statuses:
 - **Review** — implementation or drafting is complete and awaiting validation or acceptance.
 - **Done** — acceptance criteria have been satisfied and the item is complete.
 
-Status describes workflow state. It does not define scope, commitment, or priority.
+Status describes workflow state. It does not define scope, commitment, priority, or permission to change that state.
 
 In particular, a Package already committed to a Milestone may legitimately have `Status = Backlog` while waiting for execution.
+
+### Action Owner
+
+The role expected to take the next meaningful action while a work item is in a given Status.
+
+Action Owner answers:
+
+> Who is expected to act now?
+
+Examples include Implementer, Reviewer, Approver, and PM / Governor.
+
+Action Owner is a workflow responsibility concept. It is not necessarily the same as the GitHub assignee, issue creator, resource owner, or person currently viewing the item.
+
+The authoritative mapping from Status to Action Owner is defined by the Workflow / Review Contract.
+
+### Transition Authority
+
+The role or policy authority permitted to perform a specific workflow Status transition.
+
+Transition Authority answers:
+
+> Who is allowed to move this work item from the current Status to the proposed next Status?
+
+A user or Agent being technically able to edit a Project field does not imply Transition Authority.
+
+Examples:
+
+- `In Progress → Review` is normally initiated by the Implementer.
+- `Review → In Progress` after `REVISE` is normally initiated by the Reviewer.
+- `Review → Done` after `ACCEPT` is performed only by the authorized Reviewer / Approver path defined by policy.
+
+The complete transition matrix is defined by the Workflow / Review Contract.
 
 ### Priority
 
@@ -304,6 +340,20 @@ Project
 ```
 
 A Discovery is not automatically a child of the Milestone in which it was discovered. Its location is recorded as context until triage decides the resulting work relationship.
+
+### Parent Package
+
+The single Package that structurally owns a Planning Item.
+
+For `Work Type = Planning`, Parent Package is mandatory and unique.
+
+Canonical invariant:
+
+> EVERY PLANNING ITEM HAS EXACTLY ONE PARENT PACKAGE
+
+A Planning Item without a Parent Package is an orphaned / incomplete creation state. A Planning Item with multiple competing parent ownership records is invalid.
+
+The Parent Package is the authoritative source from which Milestone membership is normally derived; the Planning Item should not maintain an independent conflicting Milestone ownership record.
 
 ### Discovered In
 
@@ -379,6 +429,7 @@ The following distinctions are normative:
 |---|---|---|
 | Milestone | Package | Milestone is a delivery boundary; Package is a trackable unit of accepted work inside that boundary. |
 | Package | Planning Item | Package is the stable work unit; Planning Item is its independently trackable decomposition. |
+| Planning Item | Parent Package | Every Planning Item must belong to exactly one Parent Package; Parent Package is its structural ownership link. |
 | Planning Item | Checklist Item | Planning has an independent lifecycle when needed; Checklist is lightweight execution detail. |
 | Discovery | Accepted Work | Discovery captures information; triage decides whether work is accepted. |
 | Request | Project Backlog | Request is incoming proposed work; Project Backlog is retained work not committed to active Milestone scope. |
@@ -386,6 +437,8 @@ The following distinctions are normative:
 | Scope Change | Interruption | Scope Change modifies current Milestone scope; Interruption changes immediate execution priority while scope stays unchanged. |
 | Scope Change | Spike | Scope Change is a decision with sufficient evidence; Spike gathers evidence when the decision is not yet justified. |
 | Project Backlog | Reject | Project Backlog retains potentially valuable work; Reject intentionally stops tracking it as actionable work. |
+| Status | Action Owner | Status describes workflow state; Action Owner identifies the role expected to act next in that state. |
+| Action Owner | Transition Authority | Action Owner identifies who should act; Transition Authority identifies who may perform a specific Status transition. |
 | Status | Priority | Status describes workflow state; Priority describes relative importance. |
 | Priority | Urgency | Priority is comparative ordering; Urgency is time sensitivity / consequence of delay. |
 | Priority | Sequence | Priority influences what should be preferred; Sequence records planned relative execution order. |
@@ -407,12 +460,15 @@ All PM skills must preserve these invariants unless an approved future contract 
 4. **UNKNOWN ≠ IMPLEMENT NOW**
 5. **PACKAGE ID ≠ EXECUTION ORDER**
 6. **PROJECT BACKLOG ≠ STATUS: BACKLOG**
-7. A Scope Change must not be silently introduced by an Agent.
-8. An Interruption must not be represented as a Scope Change merely because it is urgent.
-9. A Planning Item should not duplicate Milestone ownership when that ownership is inherited from its Package.
-10. Recommendation and approval are distinct states.
-11. Review Result and workflow Status are distinct states.
-12. Status, Priority, Urgency, Sequence, and Scope are separate dimensions.
+7. **EVERY PLANNING ITEM HAS EXACTLY ONE PARENT PACKAGE**
+8. A Scope Change must not be silently introduced by an Agent.
+9. An Interruption must not be represented as a Scope Change merely because it is urgent.
+10. A Planning Item should not duplicate Milestone ownership when that ownership is inherited from its Parent Package.
+11. Recommendation and approval are distinct states.
+12. Review Result and workflow Status are distinct states.
+13. Status, Priority, Urgency, Sequence, and Scope are separate dimensions.
+14. A Status transition must follow the applicable Transition Authority; technical edit access does not grant workflow authority.
+15. A child resource must not be reported as successfully created until required parent relationships and required project metadata have been established or an explicit partial-failure state has been reported.
 
 ---
 
@@ -432,8 +488,11 @@ For the initial GitHub implementation, expected mappings include:
 | Project Backlog | Tracked Issue/Request outside active Milestone scope, represented according to adapter policy |
 | Status | GitHub Project `Status` field |
 | Status: Backlog | GitHub Project `Status = Backlog` |
+| Action Owner | Workflow contract / adapter projection; may be derived rather than stored as a Project field |
+| Transition Authority | Workflow contract / policy; not inferred from GitHub UI edit permission |
 | Priority | GitHub Project `Priority` field |
 | Sequence | GitHub Project `Sequence` number field |
+| Parent Package | GitHub Parent issue relationship for a Planning sub-issue |
 | Parent / Child | GitHub Parent issue / Sub-issue relationship |
 
 These mappings are adapter decisions. They do not redefine the canonical PM meanings above.
