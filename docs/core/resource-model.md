@@ -9,13 +9,14 @@ This document is the authoritative source for **resource structure and relations
 ## 1. Design principles
 
 1. Resource structure is independent of any storage product.
-2. Structural ownership, execution placement, workflow status, scope commitment, provenance, and dependency are separate dimensions.
-3. Every structural relationship has one authoritative source of truth.
-4. Child resources do not duplicate ownership metadata that can be derived from their parent unless an adapter explicitly maintains a denormalized projection.
-5. Creating an entity is not enough: required relationships and required project metadata must also be established and verified.
-6. A resource whose required relationships are missing is in an incomplete / invalid creation state and must not be reported as successfully created.
-7. Project Backlog membership is an explicit project-level placement relation; it is not inferred from workflow status or missing Milestone metadata.
-8. Every accepted Package must have exactly one explicit **Execution Placement**: either one Milestone or Project-level approved execution outside all Milestones.
+2. Structural placement / ownership, workflow status, scope commitment, provenance, and dependency are separate dimensions.
+3. **Execution Placement is the canonical structural placement relation for an accepted Package; it is not a second ownership record.**
+4. Every structural relationship has one authoritative source of truth.
+5. Child resources do not duplicate ownership metadata that can be derived from their parent unless an adapter explicitly maintains a denormalized projection.
+6. Creating an entity is not enough: required relationships and required project metadata must also be established and verified.
+7. A resource whose required relationships are missing is in an incomplete / invalid creation state and must not be reported as successfully created.
+8. Project Backlog membership is an explicit project-level placement relation; it is not inferred from workflow status or missing Milestone metadata.
+9. Every accepted Package must have exactly one explicit **Execution Placement**: either one Milestone or Project-level approved execution outside all Milestones.
 
 ---
 
@@ -46,10 +47,16 @@ flowchart TD
     D -. decision may create approved project-level work .-> XP
 ```
 
-The solid hierarchy represents structural ownership / execution placement. The two Package nodes are the **same canonical Package resource type** under two valid execution placements:
+The solid edges are canonical structural relationships.
 
-1. Milestone-owned execution, or
-2. Project-level approved execution outside all Milestones.
+For an accepted Package, the incoming structural edge is its **Execution Placement**. The two Package nodes above are the **same canonical Package resource type** shown under its two valid placements:
+
+1. Milestone execution — `Milestone → Package`, or
+2. Project-level approved execution — `Project → Package` outside all Milestones.
+
+These are not duplicated ownership plus placement records; the Execution Placement edge itself is the Package's authoritative structural placement.
+
+For lower-level work, `Package → Planning Item → Checklist Item` represents Parent / Child decomposition.
 
 Dashed arrows represent contextual or decision-driven relationships, not ownership.
 
@@ -77,7 +84,9 @@ A Milestone is a bounded delivery objective governed by Goal, Scope, and Exit Cr
 
 Canonical structural rule:
 
-> A Milestone directly owns accepted Packages, not Planning Items.
+> A Milestone is a valid Execution Placement for accepted Packages, not for Planning Items.
+
+When a Package's Execution Placement points to a Milestone, that Package is directly committed to that Milestone.
 
 Planning Items inherit Milestone membership through their Parent Package.
 
@@ -87,20 +96,22 @@ A Milestone should therefore not maintain a second, independent list of the same
 
 A Package is the stable, independently trackable unit of accepted work.
 
-A Package must have exactly one canonical **Execution Placement**:
+A Package must have exactly one canonical **Execution Placement**, which is also the Package's authoritative structural placement relation:
 
-- **Milestone placement** — the Package is directly committed to exactly one Milestone; or
-- **Project-level approved execution placement** — the Package is approved for execution directly under the Project and intentionally belongs to no Milestone.
+- **Milestone placement** — `Milestone → Package`; the Package is directly committed to exactly one Milestone; or
+- **Project-level approved execution placement** — `Project → Package`; the Package is approved for execution directly under the Project and intentionally belongs to no Milestone.
 
 A Package may:
 
-- belong to a Milestone,
-- be approved for Project-level execution outside all Milestones,
+- belong to a Milestone through its Execution Placement,
+- be approved for Project-level execution outside all Milestones through its Execution Placement,
 - own zero or more Planning Items,
 - participate in dependency relationships with peer work,
 - carry its own workflow Status, Priority, Sequence, Acceptance Criteria, and implementation context.
 
-A Package must not simultaneously use both canonical execution placements. Moving a Package between placements is a governed project-management mutation, not a workflow Status change.
+A Package must not simultaneously use both canonical execution placements. An adapter must not create a second Package ownership field in parallel with Execution Placement.
+
+Moving a Package between placements is a governed project-management mutation, not a workflow Status change.
 
 Package identity is stable and does not encode execution order.
 
@@ -115,7 +126,7 @@ Canonical invariant:
 A Planning Item:
 
 - must have exactly one Parent Package,
-- inherits the execution placement and Milestone scope membership, if any, from that Parent Package,
+- inherits the Parent Package's Execution Placement and Milestone scope membership, if any,
 - may have its own Status, Acceptance Criteria, blocker state, discussion, and deliverable,
 - must not maintain a conflicting independent Milestone or execution-placement ownership record.
 
@@ -247,29 +258,37 @@ The Spike's decision semantics and completion routing belong to the decision mod
 
 ## 5. Relationship taxonomy
 
-The canonical model distinguishes the following relationship types.
+The canonical model distinguishes the following relationship types while preserving a single source of truth for each persisted relation.
 
-### 5.1 Structural ownership
+### 5.1 Structural relationships
 
-Structural ownership answers:
+Structural relationships answer:
 
-> Where does this resource belong?
+> Where does this resource belong in the canonical PM model?
 
-Examples:
+They include two important subtypes:
 
 ```text
-Project → Milestone
-Milestone → Package
-Project → Package (Project-level approved execution)
-Package → Planning Item
-Planning Item → Checklist Item
+Structural relationship
+├─ Package Execution Placement
+│  ├─ Milestone → Package
+│  └─ Project → Package [Project-level approved execution]
+└─ Parent / Child decomposition
+   ├─ Package → Planning Item
+   └─ Planning Item → Checklist Item
 ```
 
-Structural ownership must have one authoritative source of truth.
+`Project → Milestone` is also a structural containment relationship at the delivery-boundary level.
+
+A single persisted relationship may have a specialized semantic name. In particular, `Milestone → Package` and `Project → Package [approved execution]` are called **Execution Placement** because they identify the approved execution scope of a Package.
+
+The specialized name does **not** require a second ownership record.
 
 ### 5.2 Execution Placement
 
-Execution Placement answers:
+Execution Placement is the **Package-specific structural placement relation**.
+
+It answers:
 
 > Under which approved execution scope does this accepted Package currently belong?
 
@@ -285,18 +304,26 @@ or:
 Project-level approved execution
 ```
 
+For Package resources:
+
+> **EXECUTION PLACEMENT = AUTHORITATIVE STRUCTURAL PLACEMENT**
+
+There must not be a separate competing `Package Owner`, `Structural Owner`, or equivalent canonical relationship that duplicates the same Milestone / Project placement.
+
 The relation is mutually exclusive for a Package at a point in time.
 
 Project-level approved execution is used for accepted work that must execute outside every Milestone, such as an approved Interruption. It does **not** silently enlarge the active Milestone.
 
 A Package placed in Project-level approved execution requires an explicit approved decision / authorization context from the applicable decision and approval contracts. Merely having no Milestone does not establish this placement.
 
-A storage adapter must provide one authoritative representation that lets a PM skill distinguish:
+A storage adapter must expose or derive from one authoritative representation enough information for a PM skill to distinguish:
 
 - Milestone Package,
 - Project-level approved execution Package,
 - Project Backlog work,
 - other Project-level records.
+
+If a storage product exposes both a native relationship and a projection field, one must be designated authoritative and the other treated as derived metadata; both must not be independent writable sources of truth.
 
 ### 5.3 Project Backlog placement
 
@@ -329,21 +356,21 @@ Examples include:
 - requires,
 - prerequisite for.
 
-Dependency is orthogonal to Parent / Child ownership.
+Dependency is orthogonal to structural placement / Parent / Child relationships.
 
 ### 5.6 Workflow relationship
 
-Workflow state and state transitions describe execution lifecycle, not structural ownership or Execution Placement.
+Workflow state and state transitions describe execution lifecycle, not structural placement.
 
 The authoritative workflow state machine belongs to `docs/core/workflow-contract.md` once PLAN07 is complete.
 
 ---
 
-## 6. Ownership and scope inheritance
+## 6. Placement and scope inheritance
 
-### 6.1 Milestone ownership chain
+### 6.1 Milestone Execution Placement chain
 
-For normal Milestone work, the canonical ownership chain is:
+For normal Milestone work, the canonical structural chain is:
 
 ```text
 Project
@@ -352,29 +379,31 @@ Project
       └─ Planning Item
 ```
 
-The Package is the direct Milestone scope member.
+For the Package, `Milestone → Package` is its single authoritative Execution Placement.
 
-The Planning Item inherits that scope membership from the Package.
+The Planning Item inherits that Package's Milestone scope membership.
 
 ### 6.2 No duplicate child Milestone ownership
 
 A Planning Item should not maintain an independent canonical Milestone ownership record when its Parent Package already determines that relationship.
 
-If a storage tool exposes a duplicated Milestone field for convenience, that value is only a denormalized projection and must never override the Parent Package relationship.
+If a storage tool exposes a duplicated Milestone field for convenience, that value is only a denormalized projection and must never override the Parent Package relationship and inherited Execution Placement.
 
-If the projected Milestone conflicts with the Parent Package's Milestone, the Parent Package relationship is authoritative and the adapter must report or repair the inconsistency.
+If the projected Milestone conflicts with the Parent Package's Execution Placement, the Parent Package-derived placement is authoritative and the adapter must report or repair the inconsistency.
 
-### 6.3 Project-level approved execution chain
+### 6.3 Project-level approved Execution Placement chain
 
 Approved work may execute outside every Milestone without changing any Milestone scope.
 
-The canonical ownership chain is:
+The canonical structural chain is:
 
 ```text
 Project
 └─ Package [Execution Placement = Project-level approved execution]
    └─ Planning Item
 ```
+
+For the Package, `Project → Package [approved execution]` is its single authoritative Execution Placement.
 
 This path is used when a project-management decision authorizes immediate or active work but explicitly keeps that work outside Milestone scope.
 
@@ -396,7 +425,7 @@ The second rule matters because absence of Milestone metadata alone cannot disti
 
 ### 6.4 Execution Placement inheritance
 
-Planning Items inherit their Parent Package's Execution Placement.
+Planning Items inherit their Parent Package's Execution Placement; they do not own a second Execution Placement relation.
 
 Therefore:
 
@@ -406,7 +435,7 @@ Therefore:
 
 ### 6.5 Moving between placements
 
-Changing a Package from one execution placement to another changes project commitment / scope placement and must be performed through the applicable decision / approval process.
+Changing a Package from one Execution Placement to another changes project commitment / scope placement and must be performed through the applicable decision / approval process.
 
 Examples include:
 
@@ -521,7 +550,9 @@ For an accepted Package this includes verifying at least:
 Package exists
 Work Type = Package
 Exactly one canonical Execution Placement exists
+Execution Placement is the Package's authoritative structural placement
 Execution Placement matches the approved decision
+No competing Package ownership / placement relationship exists
 Project Backlog placement is not simultaneously authoritative
 Required Project membership / metadata exists
 ```
@@ -555,20 +586,22 @@ All PM skills and adapters must preserve these rules:
 4. Planning Items inherit Execution Placement and Milestone scope, if any, from their Parent Package.
 5. Child resources must not create a competing canonical Milestone or Execution Placement source of truth.
 6. **EVERY ACCEPTED PACKAGE HAS EXACTLY ONE EXECUTION PLACEMENT.**
-7. Valid Package Execution Placements are one Milestone or Project-level approved execution outside all Milestones.
-8. A Package must not simultaneously use Milestone placement and Project-level approved execution placement.
-9. **PROJECT BACKLOG ≠ STATUS: BACKLOG.**
-10. Project Backlog membership must have one explicit, authoritative representation.
-11. Project Backlog membership and accepted Package Execution Placement are mutually exclusive.
-12. Project Backlog membership must not be inferred solely from `Status = Backlog`.
-13. Project Backlog membership must not be inferred solely from `Milestone = empty`.
-14. Project-level approved execution must not be inferred solely from `Milestone = empty`.
-15. `Discovered In` is provenance, not ownership.
-16. Parent / Child and Dependency relationships are different and must not be substituted for each other.
-17. Resource creation is incomplete until required relationships and metadata are persisted and verified.
-18. An adapter that cannot complete required resource integrity must report `PARTIAL` or `FAILED`, not success.
-19. Technical storage convenience must not override the canonical structural relationship model.
-20. Moving work between Project Backlog, Milestone execution, and Project-level approved execution is a governed placement mutation, not an ordinary workflow Status transition.
+7. **EXECUTION PLACEMENT IS THE AUTHORITATIVE STRUCTURAL PLACEMENT FOR AN ACCEPTED PACKAGE; IT IS NOT A SECOND OWNERSHIP RECORD.**
+8. Valid Package Execution Placements are one Milestone or Project-level approved execution outside all Milestones.
+9. A Package must not simultaneously use Milestone placement and Project-level approved execution placement.
+10. An adapter must not maintain an independently authoritative Package ownership field that duplicates Execution Placement.
+11. **PROJECT BACKLOG ≠ STATUS: BACKLOG.**
+12. Project Backlog membership must have one explicit, authoritative representation.
+13. Project Backlog membership and accepted Package Execution Placement are mutually exclusive.
+14. Project Backlog membership must not be inferred solely from `Status = Backlog`.
+15. Project Backlog membership must not be inferred solely from `Milestone = empty`.
+16. Project-level approved execution must not be inferred solely from `Milestone = empty`.
+17. `Discovered In` is provenance, not ownership.
+18. Parent / Child and Dependency relationships are different and must not be substituted for each other.
+19. Resource creation is incomplete until required relationships and metadata are persisted and verified.
+20. An adapter that cannot complete required resource integrity must report `PARTIAL` or `FAILED`, not success.
+21. Technical storage convenience must not override the canonical structural relationship model.
+22. Moving work between Project Backlog, Milestone execution, and Project-level approved execution is a governed placement mutation, not an ordinary workflow Status transition.
 
 ---
 
@@ -579,18 +612,17 @@ The canonical model is product-independent. The initial GitHub implementation is
 | Canonical resource / relation | Initial GitHub representation | Authority note |
 |---|---|---|
 | Project | GitHub Project | Management / projection layer |
-| Milestone | GitHub repository Milestone | Directly associated with Package Issues in the initial single-repo model |
-| Package — Milestone placement | GitHub Issue, `Work Type = Package`, native Milestone set | Native Milestone is authoritative for this placement |
-| Package — Project-level approved execution | GitHub Issue, `Work Type = Package`, no native Milestone plus adapter-defined explicit Execution Placement | Empty Milestone alone is insufficient; explicit placement + approved decision context are required |
+| Milestone | GitHub repository Milestone | Delivery-boundary resource |
+| Package — Execution Placement = Milestone | GitHub Issue, `Work Type = Package`, native Milestone set | Native Milestone is the authoritative Package Execution Placement; no separate Package ownership field is needed |
+| Package — Execution Placement = Project-level approved execution | GitHub Issue, `Work Type = Package`, no native Milestone plus adapter-defined explicit Execution Placement | The explicit placement representation is the authoritative Package structural placement; empty Milestone alone is insufficient |
 | Planning Item | GitHub Issue, `Work Type = Planning` | Must have native Parent/Sub-issue relationship to Package |
-| Parent Package | GitHub Parent issue / Sub-issue relationship | Authoritative structural relationship |
+| Parent Package | GitHub Parent issue / Sub-issue relationship | Authoritative structural decomposition relationship |
 | Checklist Item | Markdown task list inside Package / Planning Item | Lightweight, non-independent step |
 | Discovery | GitHub Issue, `Work Type = Discovery` | Project-level until triage decides resulting work placement |
 | Request | GitHub Issue, `Work Type = Request` | May later become Project Backlog or accepted work |
 | Spike | GitHub Issue, `Work Type = Spike` | Placement depends on approved context |
-| Execution Placement | Native Milestone for Milestone Packages; adapter-defined explicit Project representation for Project-level approved execution | Must be deterministically queryable and mutually exclusive |
 | Project Backlog membership | Adapter-defined explicit Project representation | Must not be inferred from Status or empty Milestone |
-| Dependency | GitHub-supported dependency / linkage representation when available, otherwise adapter-managed explicit relation | Must remain distinct from Parent/Sub-issue |
+| Dependency | GitHub-supported dependency / linkage representation when available, otherwise adapter-managed explicit relation | Must remain distinct from structural placement and Parent/Sub-issue |
 
 ### 10.1 GitHub Milestone limitation
 
@@ -611,7 +643,14 @@ Planning Item Parent issue = authoritative
 Planning Item custom "Parent Package" text = non-authoritative duplicate and should be avoided
 ```
 
-For Project-level approved execution, GitHub has no native Milestone-equivalent relation that represents this canonical placement. The adapter must therefore define one explicit Project-level representation and treat it as authoritative for that placement; it must not infer the placement from an empty Milestone field.
+For a Milestone Package:
+
+```text
+Native Milestone = authoritative Execution Placement
+Custom "Execution Placement" field = optional derived projection only
+```
+
+For Project-level approved execution, GitHub has no native Milestone-equivalent relation. The adapter must therefore define one explicit Project-level representation and treat **that representation as the Package's canonical Execution Placement / structural placement**; it must not create a separate ownership record or infer the placement from an empty Milestone field.
 
 ---
 
@@ -620,8 +659,8 @@ For Project-level approved execution, GitHub has no native Milestone-equivalent 
 This document owns:
 
 - canonical resource hierarchy,
-- structural ownership,
-- Package Execution Placement semantics,
+- structural relationship taxonomy,
+- Package Execution Placement as the canonical Package structural placement relation,
 - Project Backlog placement semantics,
 - Planning Parent invariant,
 - orphan / incomplete resource handling,
