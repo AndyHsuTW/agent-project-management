@@ -1,376 +1,376 @@
-# Canonical PM Resource Model
+# PM 核心資源模型
 
-> Status: M1 / PM-P01 / PLAN02 — Ready for re-review
+> 狀態：M1 / PM-P01 / PLAN02 — 中文化修訂完成，待重新審查
 >
-> Purpose: Define the canonical project-management resources, their ownership and structural relationships, and the integrity rules that all PM skills and storage adapters must preserve.
+> 用途：定義 canonical 專案管理資源、資源之間的結構歸屬關係，以及所有 PM skills 與 storage adapters 都必須維持的 integrity 規則。
 
-This document is the authoritative source for **resource structure and relationship integrity**. It intentionally does not define workflow status transitions, review authority, approval policy, or discovery decision routing; those belong to their dedicated contracts.
+本文件是**資源結構與關係完整性**的 authoritative source of truth。Workflow `Status` transition、review authority、approval policy 與 Discovery decision routing 不在本文件定義範圍內，分別由其他專屬 contract 負責。
 
-## 1. Design principles
+## 1. 設計原則
 
-1. Resource structure is independent of any storage product.
-2. Structural placement / ownership, workflow status, scope commitment, provenance, and dependency are separate dimensions.
-3. **Execution Placement is the canonical structural placement relation for an accepted Package; it is not a second ownership record.**
-4. Every structural relationship has one authoritative source of truth.
-5. Child resources do not duplicate ownership metadata that can be derived from their parent unless an adapter explicitly maintains a denormalized projection.
-6. Creating an entity is not enough: required relationships and required project metadata must also be established and verified.
-7. A resource whose required relationships are missing is in an incomplete / invalid creation state and must not be reported as successfully created.
-8. Project Backlog membership is an explicit project-level placement relation; it is not inferred from workflow status or missing Milestone metadata.
-9. Every accepted Package must have exactly one explicit **Execution Placement**: either one Milestone or Project-level approved execution outside all Milestones.
+1. 資源結構不依賴任何特定 storage product。
+2. 結構歸屬、workflow Status、Scope commitment、provenance（來源脈絡）與 Dependency（相依關係）是不同維度。
+3. **執行歸屬（Execution Placement）是已接受 Package 的 canonical structural placement relation；它不是第二份 ownership record。**
+4. 每一種 structural relationship 都只能有一個 authoritative source of truth。
+5. Child resource 不應重複維護可以從 parent 推導出的 ownership metadata；除非 adapter 明確把它維護為 denormalized projection（非正規化投影）。
+6. 建立 entity 本身不代表建立完成；必要 relationship 與 Project metadata 也必須建立並驗證。
+7. 缺少必要 relationship 的 resource 屬於 incomplete / invalid creation state，不得回報為建立成功。
+8. 專案待辦池（Project Backlog）membership 是明確的 Project-level placement relation；不能由 workflow Status 或缺少 Milestone metadata 推導。
+9. 每個已接受 Package 必須且只能有一個明確的 **Execution Placement**：某一個 Milestone，或所有 Milestone 之外的「專案層級已核准執行」。
 
 ---
 
-## 2. Canonical resource hierarchy
+## 2. Canonical 資源階層
 
 ```mermaid
 flowchart TD
-    PROJECT[Project]
+    PROJECT[專案 Project]
 
-    PROJECT --> M[Milestone]
-    M --> MP[Package]
-    MP --> MPI[Planning Item]
-    MPI --> MCI[Checklist Item]
+    PROJECT --> M[里程碑 Milestone]
+    M --> MP[工作包 Package]
+    MP --> MPI[規劃項目 Planning Item]
+    MPI --> MCI[清單項目 Checklist Item]
 
-    PROJECT --> XP[Package\nProject-level approved execution]
-    XP --> XPI[Planning Item]
-    XPI --> XCI[Checklist Item]
+    PROJECT --> XP[工作包 Package\n專案層級已核准執行]
+    XP --> XPI[規劃項目 Planning Item]
+    XPI --> XCI[清單項目 Checklist Item]
 
-    PROJECT --> PB[Project Backlog]
-    PROJECT --> D[Discovery]
-    PROJECT --> R[Request]
-    PROJECT --> S[Spike]
+    PROJECT --> PB[專案待辦池 Project Backlog]
+    PROJECT --> D[發現 Discovery]
+    PROJECT --> R[需求 Request]
+    PROJECT --> S[探索任務 Spike]
 
-    D -. provenance .-> MP
-    D -. provenance .-> MPI
-    D -. decision may create or place work .-> PB
-    D -. decision may create accepted work .-> MP
-    D -. decision may create approved project-level work .-> XP
+    D -. 發現來源 provenance .-> MP
+    D -. 發現來源 provenance .-> MPI
+    D -. 決策後可保留工作 .-> PB
+    D -. 決策後可建立已接受工作 .-> MP
+    D -. 決策後可建立專案層級已核准工作 .-> XP
 ```
 
-The solid edges are canonical structural relationships.
+實線代表 canonical structural relationship。
 
-For an accepted Package, the incoming structural edge is its **Execution Placement**. The two Package nodes above are the **same canonical Package resource type** shown under its two valid placements:
+對已接受的 Package 而言，指向 Package 的 incoming structural edge 就是它的 **Execution Placement**。上圖的兩個 Package node 是**同一種 canonical Package resource type**，只是分別顯示在兩種合法執行歸屬下：
 
-1. Milestone execution — `Milestone → Package`, or
-2. Project-level approved execution — `Project → Package` outside all Milestones.
+1. Milestone 執行 — `Milestone → Package`；或
+2. 專案層級已核准執行 — `Project → Package`，且不屬於任何 Milestone。
 
-These are not duplicated ownership plus placement records; the Execution Placement edge itself is the Package's authoritative structural placement.
+這不是同時維護 ownership 與 placement 兩份紀錄；Execution Placement edge 本身就是 Package 的 authoritative structural placement。
 
-For lower-level work, `Package → Planning Item → Checklist Item` represents Parent / Child decomposition.
+較低層工作則由 `Package → Planning Item → Checklist Item` 表示 Parent / Child decomposition。
 
-Dashed arrows represent contextual or decision-driven relationships, not ownership.
+虛線代表 context 或 decision-driven relationship，不代表 ownership。
 
-### 2.1 Project
+### 2.1 專案（Project）
 
-The Project is the durable top-level management boundary.
+Project 是持久存在的最高層管理邊界。
 
-A Project owns or provides context for:
+Project 擁有或提供以下資源的 context：
 
-- Milestones,
-- Project-level approved execution Packages,
-- Project Backlog membership,
-- Packages,
-- Planning Items through their Package,
-- Discoveries,
-- Requests,
-- Spikes,
-- other project records introduced by approved future contracts.
+- Milestone；
+- 專案層級已核准執行的 Package；
+- Project Backlog membership；
+- Package；
+- 透過 Package 所屬的 Planning Item；
+- Discovery；
+- Request；
+- Spike；
+- 後續經核准 contract 所引入的其他 Project records。
 
-A Project is not a workflow Status and does not itself imply a delivery deadline.
+Project 不是 workflow `Status`，本身也不代表 delivery deadline。
 
-### 2.2 Milestone
+### 2.2 里程碑（Milestone）
 
-A Milestone is a bounded delivery objective governed by Goal, Scope, and Exit Criteria.
+Milestone 是由 Goal、Scope 與 Exit Criteria 治理的有限交付目標。
 
-Canonical structural rule:
+Canonical structural rule：
 
-> A Milestone is a valid Execution Placement for accepted Packages, not for Planning Items.
+> Milestone 是已接受 Package 的合法 Execution Placement，不是 Planning Item 的直接 Execution Placement。
 
-When a Package's Execution Placement points to a Milestone, that Package is directly committed to that Milestone.
+當 Package 的 Execution Placement 指向某一個 Milestone，該 Package 就直接 committed 到這個 Milestone。
 
-Planning Items inherit Milestone membership through their Parent Package.
+Planning Item 透過 Parent Package 繼承 Milestone membership。
 
-A Milestone should therefore not maintain a second, independent list of the same Planning Items as direct scope children.
+因此 Milestone 不應再維護第二份相同 Planning Item 的 direct scope child 清單。
 
-### 2.3 Package
+### 2.3 工作包（Package）
 
-A Package is the stable, independently trackable unit of accepted work.
+Package 是已接受、具有穩定識別且可獨立追蹤的工作單位。
 
-A Package must have exactly one canonical **Execution Placement**, which is also the Package's authoritative structural placement relation:
+Package 必須且只能有一個 canonical **Execution Placement**；這個 relation 同時就是 Package 的 authoritative structural placement：
 
-- **Milestone placement** — `Milestone → Package`; the Package is directly committed to exactly one Milestone; or
-- **Project-level approved execution placement** — `Project → Package`; the Package is approved for execution directly under the Project and intentionally belongs to no Milestone.
+- **Milestone 歸屬** — `Milestone → Package`；Package 直接 committed 到且只能屬於一個 Milestone；或
+- **專案層級已核准執行** — `Project → Package`；Package 已被核准直接在 Project 下執行，且刻意不屬於任何 Milestone。
 
-A Package may:
+Package 可以：
 
-- belong to a Milestone through its Execution Placement,
-- be approved for Project-level execution outside all Milestones through its Execution Placement,
-- own zero or more Planning Items,
-- participate in dependency relationships with peer work,
-- carry its own workflow Status, Priority, Sequence, Acceptance Criteria, and implementation context.
+- 透過 Execution Placement 屬於某個 Milestone；
+- 透過 Execution Placement 在所有 Milestone 之外進行 Project-level approved execution；
+- 擁有 0 個或多個 Planning Item；
+- 與同層工作形成 Dependency；
+- 擁有自己的 workflow `Status`、Priority、Sequence、Acceptance Criteria 與 implementation context。
 
-A Package must not simultaneously use both canonical execution placements. An adapter must not create a second Package ownership field in parallel with Execution Placement.
+Package 不得同時使用兩種 canonical Execution Placement。Adapter 也不得在 Execution Placement 之外再建立第二個 authoritative Package ownership field。
 
-Moving a Package between placements is a governed project-management mutation, not a workflow Status change.
+Package 從一種 placement 移動到另一種 placement，屬於受治理的 project-management mutation，不是普通的 workflow Status change。
 
-Package identity is stable and does not encode execution order.
+Package identity 必須保持穩定，不能把執行順序編進 identity。
 
-### 2.4 Planning Item
+### 2.4 規劃項目（Planning Item）
 
-A Planning Item is an independently trackable child decomposition of a Package.
+Planning Item 是 Package 底下可獨立追蹤的工作拆解。
 
-Canonical invariant:
+Canonical invariant：
 
-> **EVERY PLANNING ITEM HAS EXACTLY ONE PARENT PACKAGE.**
+> **每個 Planning Item 必須且只能有一個 Parent Package。**
 
-A Planning Item:
+Planning Item：
 
-- must have exactly one Parent Package,
-- inherits the Parent Package's Execution Placement and Milestone scope membership, if any,
-- may have its own Status, Acceptance Criteria, blocker state, discussion, and deliverable,
-- must not maintain a conflicting independent Milestone or execution-placement ownership record.
+- 必須且只能有一個 Parent Package；
+- 繼承 Parent Package 的 Execution Placement，以及存在時的 Milestone scope membership；
+- 可以有自己的 `Status`、Acceptance Criteria、blocker state、discussion 與 deliverable；
+- 不得維護互相衝突的獨立 Milestone 或 execution-placement ownership record。
 
-A Planning Item without a Parent Package is an **orphan** and is not considered successfully created.
+沒有 Parent Package 的 Planning Item 是 **orphan（孤兒）**，不得視為建立成功。
 
-### 2.5 Checklist Item
+### 2.5 清單項目（Checklist Item）
 
-A Checklist Item is lightweight execution detail embedded in a Package or Planning Item.
+Checklist Item 是嵌入在 Package 或 Planning Item 裡的輕量執行細節。
 
-It should not be promoted to an independent resource unless it requires its own lifecycle, discussion, blocker state, acceptance record, or ownership relationship.
+除非它需要自己的 lifecycle、discussion、blocker state、acceptance record 或 ownership relationship，否則不應提升成獨立 resource。
 
 ---
 
-## 3. Project Backlog model
+## 3. 專案待辦池（Project Backlog）模型
 
-### 3.1 Definition
+### 3.1 定義
 
-The Project Backlog is the Project-level retained-work collection for potentially valuable work that is **not currently committed to an active Milestone or another explicitly approved execution scope**.
+Project Backlog 是 Project-level retained-work collection，用來保存**目前尚未 committed 到 active Milestone 或其他明確已核准 execution scope**、但仍可能有價值的工作。
 
-Project Backlog is a scope / commitment placement concept.
+Project Backlog 是 Scope / commitment placement concept。
 
-It is not a workflow Status.
+它不是 workflow `Status`。
 
-Canonical rule:
+Canonical rule：
 
-> **PROJECT BACKLOG ≠ STATUS: BACKLOG**
+> **Project Backlog ≠ `Status = Backlog`**
 
 ### 3.2 Authoritative membership
 
-Project Backlog membership must be represented by an explicit, authoritative placement relationship that a PM skill or adapter can query deterministically.
+Project Backlog membership 必須由明確、authoritative 且 PM skill / adapter 可以 deterministic query 的 placement relationship 表示。
 
-The canonical domain model requires an effective relation equivalent to:
+Canonical domain model 至少要求等價於以下關係：
 
 ```text
 Project Backlog membership = TRUE | FALSE
 ```
 
-The storage adapter may implement this as a field, collection, label, relationship, or another supported representation, but it must provide one unambiguous source of truth.
+Storage adapter 可以使用 field、collection、label、relationship 或其他支援方式落地，但只能有一個不含糊的 source of truth。
 
-### 3.3 Forbidden inference rules
+### 3.3 禁止的推導方式
 
-A PM skill or adapter must not infer Project Backlog membership solely from either of these conditions:
+PM skill 或 adapter 不得只依據以下任一條件推導 Project Backlog membership：
 
 ```text
 Status = Backlog
 ```
 
-or:
+或：
 
 ```text
 Milestone = empty
 ```
 
-Reasons:
+原因：
 
-- A Package already committed to a Milestone may legitimately have `Status = Backlog` while waiting for execution.
-- A Project-level approved execution Package intentionally has no Milestone while still being accepted work.
-- A Planning Item may intentionally have no direct Milestone metadata because its execution placement and Milestone ownership are inherited from its Parent Package.
-- Other project-level resources may legally have no Milestone while still not being Project Backlog work.
+- 已 committed 到 Milestone 的 Package，在等待執行時可以合法處於 `Status = Backlog`。
+- 專案層級已核准執行的 Package 刻意沒有 Milestone，但仍是 accepted work。
+- Planning Item 可以刻意不直接維護 Milestone metadata，因為其 Execution Placement 與 Milestone ownership 是由 Parent Package 繼承。
+- 其他 Project-level resource 也可能合法沒有 Milestone，但並不屬於 Project Backlog。
 
-### 3.4 Typical Project Backlog members
+### 3.4 常見 Project Backlog 成員
 
-Depending on triage outcome, Project Backlog may retain resources such as:
+依 triage 結果，Project Backlog 可以保存：
 
-- Requests,
-- deferred Bugs,
-- deferred architecture work,
-- work resulting from a Discovery,
-- future Spike candidates,
-- other uncommitted but valuable work.
+- Request；
+- 延後處理的 Bug；
+- 延後處理的架構工作；
+- Discovery 所產生但尚未 committed 的工作；
+- 未來可能進行的 Spike；
+- 其他尚未承諾但具有價值的工作。
 
-The decision to place an item in Project Backlog belongs to the decision model, not this structural contract.
+是否把某項工作放入 Project Backlog，由 decision model 決定，不由本 structural contract 決定。
 
-### 3.5 Project Backlog versus accepted execution
+### 3.5 Project Backlog 與已接受執行工作
 
-A resource retained in Project Backlog is outside approved execution scope.
+保留在 Project Backlog 的 resource 位於 approved execution scope 之外。
 
-Once work is accepted as a Package for execution, it must leave Project Backlog placement and receive exactly one canonical Execution Placement:
+一旦工作被接受成為要執行的 Package，就必須離開 Project Backlog placement，並取得且只能取得一個 canonical Execution Placement：
 
 ```text
 Milestone:<id>
 ```
 
-or:
+或：
 
 ```text
-Project-level approved execution
+專案層級已核准執行
 ```
 
-An item must not simultaneously be authoritative Project Backlog work and an accepted execution Package.
+同一個 item 不得同時是 authoritative Project Backlog work 與 accepted execution Package。
 
 ---
 
-## 4. Intake and emerging-work resources
+## 4. 輸入與執行中出現的工作資源
 
-### 4.1 Discovery
+### 4.1 發現（Discovery）
 
-A Discovery is a project-level evidence and context record created before a project-management decision is made.
+Discovery 是在 project-management decision 做出之前，用來保存證據與 context 的 Project-level record。
 
-A Discovery may record `Discovered In` links to a Milestone, Package, Planning Item, review, execution activity, or incident.
+Discovery 可以用 `Discovered In` 連結到 Milestone、Package、Planning Item、review、execution activity 或 incident。
 
-`Discovered In` is provenance only.
+`Discovered In` 只代表 provenance（來源脈絡）。
 
-It does not create structural ownership under the resource where the Discovery was found.
+它不會讓 Discovery 自動成為「被發現位置」底下的 structural child。
 
-Canonical rule:
+Canonical rule：
 
-> **FOUND DURING MILESTONE ≠ BELONGS TO MILESTONE**
+> **在 Milestone 中發現 ≠ 屬於該 Milestone（FOUND DURING MILESTONE ≠ BELONGS TO MILESTONE）**
 
-A Discovery may later be linked to resulting work or Project Backlog placement after triage, but the Discovery itself does not silently modify scope.
+Discovery 經 triage 後可以連到 resulting work 或 Project Backlog placement，但 Discovery 本身不能默默修改 Scope。
 
-### 4.2 Request
+### 4.2 需求（Request）
 
-A Request is proposed work that has not yet been accepted into an execution scope.
+Request 是尚未被接受進入 execution scope 的 proposed work。
 
-A Request may exist at Project level while awaiting triage, may be retained in Project Backlog, may be rejected, or may result in accepted work.
+Request 可以在 Project-level 等待 triage，也可以被保留在 Project Backlog、Reject，或產生 accepted work。
 
-The resource model defines where it can exist; the decision model defines how that decision is made.
+Resource model 定義它可以存在的位置；decision model 定義如何做出上述決策。
 
-### 4.3 Spike
+### 4.3 探索任務（Spike）
 
-A Spike is a bounded investigation resource.
+Spike 是有明確邊界的 investigation resource。
 
-A Spike may be Project-level or associated with an approved Package depending on why the investigation exists. Its structural placement must be explicit and must not be inferred from where the uncertainty was first discovered.
+依調查原因不同，Spike 可以位於 Project-level，或與已核准 Package 關聯。它的 structural placement 必須明確，不能由「不確定性最早在哪裡被發現」來推導。
 
-The Spike's decision semantics and completion routing belong to the decision model.
+Spike 的 decision semantics 與 completion routing 由 decision model 負責。
 
 ---
 
-## 5. Relationship taxonomy
+## 5. 關係分類
 
-The canonical model distinguishes the following relationship types while preserving a single source of truth for each persisted relation.
+Canonical model 區分以下 relationship type，同時要求每一個 persisted relation 都只有一個 source of truth。
 
-### 5.1 Structural relationships
+### 5.1 結構關係（Structural Relationships）
 
-Structural relationships answer:
+Structural relationship 回答：
 
-> Where does this resource belong in the canonical PM model?
+> 這個 resource 在 canonical PM model 中正式屬於哪裡？
 
-They include two important subtypes:
+主要包含兩種 subtype：
 
 ```text
 Structural relationship
 ├─ Package Execution Placement
 │  ├─ Milestone → Package
-│  └─ Project → Package [Project-level approved execution]
+│  └─ Project → Package [專案層級已核准執行]
 └─ Parent / Child decomposition
    ├─ Package → Planning Item
    └─ Planning Item → Checklist Item
 ```
 
-`Project → Milestone` is also a structural containment relationship at the delivery-boundary level.
+`Project → Milestone` 也是 delivery-boundary level 的 structural containment relationship。
 
-A single persisted relationship may have a specialized semantic name. In particular, `Milestone → Package` and `Project → Package [approved execution]` are called **Execution Placement** because they identify the approved execution scope of a Package.
+同一個 persisted relationship 可以有更專門的 semantic name。`Milestone → Package` 與 `Project → Package [專案層級已核准執行]` 特別稱為 **Execution Placement**，因為它們表示 Package 正式屬於哪個 approved execution scope。
 
-The specialized name does **not** require a second ownership record.
+這個 specialized name **不代表需要第二份 ownership record**。
 
-### 5.2 Execution Placement
+### 5.2 執行歸屬（Execution Placement）
 
-Execution Placement is the **Package-specific structural placement relation**.
+Execution Placement 是 **Package 專用的 structural placement relation**。
 
-It answers:
+它回答：
 
-> Under which approved execution scope does this accepted Package currently belong?
+> 這個已接受的 Package 現在正式屬於哪一個已核准執行範圍？
 
-Every accepted Package has exactly one canonical Execution Placement:
+每個已接受 Package 必須且只能有一個 canonical Execution Placement：
 
 ```text
 Milestone:<id>
 ```
 
-or:
+或：
 
 ```text
-Project-level approved execution
+專案層級已核准執行
 ```
 
-For Package resources:
+對 Package 而言：
 
-> **EXECUTION PLACEMENT = AUTHORITATIVE STRUCTURAL PLACEMENT**
+> **Execution Placement = authoritative structural placement**
 
-There must not be a separate competing `Package Owner`, `Structural Owner`, or equivalent canonical relationship that duplicates the same Milestone / Project placement.
+不得再存在另一個互相競爭的 `Package Owner`、`Structural Owner` 或等價 canonical relationship，去重複表示相同的 Milestone / Project placement。
 
-The relation is mutually exclusive for a Package at a point in time.
+同一時間一個 Package 只能位於其中一種 placement。
 
-Project-level approved execution is used for accepted work that must execute outside every Milestone, such as an approved Interruption. It does **not** silently enlarge the active Milestone.
+「專案層級已核准執行」用於必須在所有 Milestone 之外立即／主動執行的 accepted work，例如已核准 Interruption。它**不會**默默擴大 active Milestone Scope。
 
-A Package placed in Project-level approved execution requires an explicit approved decision / authorization context from the applicable decision and approval contracts. Merely having no Milestone does not establish this placement.
+Package 要進入「專案層級已核准執行」，必須具備來自適用 decision / approval contract 的明確 approved decision / authorization context。只有 `Milestone = empty` 不足以證明這個 placement。
 
-A storage adapter must expose or derive from one authoritative representation enough information for a PM skill to distinguish:
+Storage adapter 必須從單一 authoritative representation 暴露或推導足夠資訊，使 PM skill 能區分：
 
-- Milestone Package,
-- Project-level approved execution Package,
-- Project Backlog work,
-- other Project-level records.
+- Milestone Package；
+- 專案層級已核准執行的 Package；
+- Project Backlog work；
+- 其他 Project-level record。
 
-If a storage product exposes both a native relationship and a projection field, one must be designated authoritative and the other treated as derived metadata; both must not be independent writable sources of truth.
+若 storage product 同時提供 native relationship 與 projection field，必須指定其中一份為 authoritative，另一份只能是 derived metadata；兩者不能都是獨立可寫入的 source of truth。
 
 ### 5.3 Project Backlog placement
 
-Project Backlog placement answers:
+Project Backlog placement 回答：
 
-> Is this retained work currently outside approved execution scope and placed in the Project Backlog?
+> 這個 retained work 是否目前位於 approved execution scope 之外，並正式被放在 Project Backlog？
 
-This is a Project-level commitment / placement relationship, not a workflow state.
+這是 Project-level commitment / placement relationship，不是 workflow state。
 
-Project Backlog placement and accepted Package Execution Placement are mutually exclusive.
+Project Backlog placement 與 accepted Package Execution Placement 必須互斥。
 
-### 5.4 Provenance (`Discovered In`)
+### 5.4 來源脈絡（Provenance / `Discovered In`）
 
-Provenance answers:
+Provenance 回答：
 
-> Where was this information discovered?
+> 這項資訊是在什麼地方被發現？
 
-A provenance relationship does not imply ownership, scope membership, priority, or execution order.
+Provenance relationship 不代表 ownership、scope membership、Priority 或 execution order。
 
-### 5.5 Dependency
+### 5.5 相依關係（Dependency）
 
-Dependency answers:
+Dependency 回答：
 
-> What work constrains another work item's ability or order to proceed?
+> 哪一項工作限制另一項工作能否或何時繼續？
 
-Examples include:
+常見語意包括：
 
-- blocks,
-- blocked by,
-- requires,
-- prerequisite for.
+- blocks；
+- blocked by；
+- requires；
+- prerequisite for。
 
-Dependency is orthogonal to structural placement / Parent / Child relationships.
+Dependency 與 structural placement / Parent / Child relationship 是互相獨立的概念。
 
-### 5.6 Workflow relationship
+### 5.6 Workflow 關係
 
-Workflow state and state transitions describe execution lifecycle, not structural placement.
+Workflow state 與 state transition 描述 execution lifecycle，不描述 structural placement。
 
-The authoritative workflow state machine belongs to `docs/core/workflow-contract.md` once PLAN07 is complete.
+Authoritative workflow state machine 將由 PLAN07 完成後的 `docs/core/workflow-contract.md` 定義。
 
 ---
 
-## 6. Placement and scope inheritance
+## 6. 歸屬與 Scope 繼承
 
-### 6.1 Milestone Execution Placement chain
+### 6.1 Milestone Execution Placement 鏈
 
-For normal Milestone work, the canonical structural chain is:
+一般 Milestone work 的 canonical structural chain：
 
 ```text
 Project
@@ -379,82 +379,82 @@ Project
       └─ Planning Item
 ```
 
-For the Package, `Milestone → Package` is its single authoritative Execution Placement.
+對 Package 而言，`Milestone → Package` 就是它唯一 authoritative 的 Execution Placement。
 
-The Planning Item inherits that Package's Milestone scope membership.
+Planning Item 繼承該 Package 的 Milestone scope membership。
 
-### 6.2 No duplicate child Milestone ownership
+### 6.2 Child 不重複維護 Milestone ownership
 
-A Planning Item should not maintain an independent canonical Milestone ownership record when its Parent Package already determines that relationship.
+當 Parent Package 已能決定 Milestone relationship 時，Planning Item 不應維護另一份獨立 canonical Milestone ownership record。
 
-If a storage tool exposes a duplicated Milestone field for convenience, that value is only a denormalized projection and must never override the Parent Package relationship and inherited Execution Placement.
+若 storage tool 為方便查詢而提供重複的 Milestone field，該欄位只能是 denormalized projection，不得覆蓋 Parent Package relationship 與繼承而來的 Execution Placement。
 
-If the projected Milestone conflicts with the Parent Package's Execution Placement, the Parent Package-derived placement is authoritative and the adapter must report or repair the inconsistency.
+若 projected Milestone 與 Parent Package 的 Execution Placement 衝突，以 Parent Package 所推導出的 placement 為 authoritative，adapter 必須回報或修復 inconsistency。
 
-### 6.3 Project-level approved Execution Placement chain
+### 6.3 專案層級已核准執行的 Execution Placement 鏈
 
-Approved work may execute outside every Milestone without changing any Milestone scope.
+Approved work 可以在所有 Milestone 之外執行，而不修改任何 Milestone Scope。
 
-The canonical structural chain is:
+Canonical structural chain：
 
 ```text
 Project
-└─ Package [Execution Placement = Project-level approved execution]
+└─ Package [Execution Placement = 專案層級已核准執行]
    └─ Planning Item
 ```
 
-For the Package, `Project → Package [approved execution]` is its single authoritative Execution Placement.
+對 Package 而言，`Project → Package [專案層級已核准執行]` 就是它唯一 authoritative 的 Execution Placement。
 
-This path is used when a project-management decision authorizes immediate or active work but explicitly keeps that work outside Milestone scope.
+這條路徑用於 project-management decision 已授權立即／主動執行工作，但明確要求它保持在 Milestone Scope 之外的情境。
 
-For example, an approved Interruption may create or activate a Package under Project-level approved execution while the interrupted Milestone remains unchanged.
+例如：已核准的 Interruption 可以在 current Milestone 不變的情況下，建立或啟用一個 Project-level approved execution Package。
 
-Canonical rules:
-
-```text
-approved execution work ≠ current Milestone member
-```
-
-and:
+Canonical rules：
 
 ```text
-Milestone = empty ≠ Project-level approved execution
+已核准執行工作 ≠ current Milestone member
 ```
 
-The second rule matters because absence of Milestone metadata alone cannot distinguish approved Project-level execution from Project Backlog work or other Project-level records.
+以及：
 
-### 6.4 Execution Placement inheritance
+```text
+Milestone = empty ≠ 專案層級已核准執行
+```
 
-Planning Items inherit their Parent Package's Execution Placement; they do not own a second Execution Placement relation.
+第二條特別重要，因為只看 Milestone metadata 為空，無法區分 Project-level approved execution、Project Backlog work 或其他 Project-level record。
 
-Therefore:
+### 6.4 Execution Placement 繼承
 
-- a Planning Item under a Milestone Package belongs to that Milestone scope indirectly;
-- a Planning Item under a Project-level approved execution Package remains outside every Milestone;
-- the Planning Item must not maintain a competing canonical execution-placement record.
+Planning Item 繼承 Parent Package 的 Execution Placement；它本身不擁有第二份 Execution Placement relation。
 
-### 6.5 Moving between placements
+因此：
 
-Changing a Package from one Execution Placement to another changes project commitment / scope placement and must be performed through the applicable decision / approval process.
+- Milestone Package 底下的 Planning Item，間接屬於該 Milestone Scope；
+- 專案層級已核准執行 Package 底下的 Planning Item，仍位於所有 Milestone 之外；
+- Planning Item 不得維護競爭性的第二份 canonical execution-placement record。
 
-Examples include:
+### 6.5 Placement 之間的移動
+
+Package 從一種 Execution Placement 移動到另一種，會改變 Project commitment / Scope placement，必須透過適用的 decision / approval process。
+
+例如：
 
 ```text
 Project Backlog → Milestone
-Project Backlog → Project-level approved execution
-Project-level approved execution → Milestone
+Project Backlog → 專案層級已核准執行
+專案層級已核准執行 → Milestone
 Milestone → Project Backlog
 ```
 
-These are not ordinary workflow Status transitions.
+這些都不是普通 workflow Status transition。
 
 ---
 
-## 7. Planning Item parent invariant
+## 7. Planning Item Parent invariant
 
-### 7.1 Valid state
+### 7.1 合法狀態
 
-A valid Planning Item must satisfy all of the following:
+合法 Planning Item 必須同時滿足：
 
 ```text
 Work Type = Planning
@@ -465,76 +465,78 @@ Required project metadata is present
 Relationship verification succeeds
 ```
 
-### 7.2 Invalid states
+其中 `Work Type = Planning` 為實際 GitHub Project field/value，因此保留英文 token。
 
-The following are invalid / incomplete states:
+### 7.2 非法／未完成狀態
+
+以下都屬於 invalid / incomplete state：
 
 ```text
-Planning Item with no Parent Package
-Planning Item with multiple competing Parent Packages
-Planning Item whose parent is not a Package
-Planning Item whose body names a parent but no structural relationship exists
-Planning Item whose required Project metadata could not be established
+Planning Item 沒有 Parent Package
+Planning Item 有多個互相競爭的 Parent Package
+Planning Item 的 parent 不是 Package
+Planning Item body 雖寫了 parent，但實際 structural relationship 不存在
+Planning Item 必要 Project metadata 無法建立
 ```
 
-Text such as:
+Issue body 中的：
 
 ```text
 Parent Package: #1
 ```
 
-inside an Issue body is documentation only. It does not replace the canonical structural Parent relationship.
+只是 documentation，不能取代 canonical structural Parent relationship。
 
-### 7.3 Orphan handling
+### 7.3 Orphan 處理
 
-If an orphan Planning Item is detected, the Agent must:
+Agent 發現 orphan Planning Item 時必須：
 
-1. stop claiming successful creation,
-2. identify the intended Parent Package if evidence is sufficient,
-3. establish and verify the Parent relationship when authorized and technically possible,
-4. otherwise report partial failure and request the required human or capable-adapter action,
-5. avoid starting normal execution until the structural integrity problem is resolved.
+1. 停止宣稱建立成功；
+2. 若證據足夠，找出 intended Parent Package；
+3. 在具有 authority 且技術可行時，建立並驗證 Parent relationship；
+4. 否則回報 partial failure，要求適當 human 或 capable adapter 完成；
+5. 在 structural integrity 修復以前，不開始正常 execution。
 
 ---
 
-## 8. Resource creation transaction
+## 8. 資源建立交易（Resource Creation Transaction）
 
-Resource creation is a logical transaction, even when the storage system requires several API calls.
+即使 storage system 需要多次 API call，resource creation 在 PM domain 上仍視為一個 logical transaction。
 
-### 8.1 Canonical creation phases
+### 8.1 Canonical 建立階段
 
 ```mermaid
 flowchart LR
-    A[Identify resource type]
-    B[Create primary entity]
-    C[Establish required structural relationships]
-    D[Set required project metadata]
-    E[Verify persisted relationships and metadata]
-    F{Integrity satisfied?}
+    A[辨識 resource type]
+    B[建立 primary entity]
+    C[建立必要 structural relationships]
+    D[設定必要 Project metadata]
+    E[驗證已寫入 relationships 與 metadata]
+    F{Integrity 是否成立?}
     G[Creation COMPLETE]
     H[Creation PARTIAL / FAILED]
-    I[Repair or human handoff]
+    I[修復或 human handoff]
 
     A --> B --> C --> D --> E --> F
     F -->|Yes| G
     F -->|No| H --> I
 ```
 
-### 8.2 Creation result
+### 8.2 建立結果
 
-Creation result is not a workflow Status. It is an operation result.
+Creation result 不是 workflow `Status`，而是 operation result。
 
-Canonical operation outcomes are:
+Canonical operation result token：
 
-- `COMPLETE` — entity and all required relationships / metadata were created and verified.
-- `PARTIAL` — primary entity exists, but one or more required relationships or metadata writes could not be completed.
-- `FAILED` — the primary resource could not be created or the operation cannot be safely represented.
+- `COMPLETE` — entity 與所有必要 relationship / metadata 均已建立並驗證。
+- `PARTIAL` — primary entity 已存在，但一個以上必要 relationship 或 metadata write 尚未完成。
+- `FAILED` — primary resource 無法建立，或目前 operation 無法被安全地表示。
 
-### 8.3 Mandatory verification
+### 8.3 強制驗證
 
-An Agent must verify persisted state after multi-step creation when the adapter supports verification.
+當 adapter 支援 read-back verification 時，Agent 在 multi-step creation 完成後必須驗證 persisted state。
 
-For a Planning Item this includes verifying at least:
+對 Planning Item，至少驗證：
 
 ```text
 Issue exists
@@ -544,7 +546,7 @@ Parent Package is the intended Package
 Required Project membership / metadata exists
 ```
 
-For an accepted Package this includes verifying at least:
+對已接受 Package，至少驗證：
 
 ```text
 Package exists
@@ -557,121 +559,121 @@ Project Backlog placement is not simultaneously authoritative
 Required Project membership / metadata exists
 ```
 
-The Agent must not convert a partial result into a success message merely because the Issue itself exists.
+即使 Issue 已成功建立，Agent 也不得把 partial result 包裝成 success。
 
 ### 8.4 Adapter capability failure
 
-If the adapter cannot create a required relationship, the correct result is:
+若 adapter 無法建立某個必要 relationship，正確 operation result 是：
 
 ```text
 Creation Result = PARTIAL
 ```
 
-with an explicit handoff describing:
+Handoff 必須明確說明：
 
-- what was created,
-- what remains missing,
-- why the adapter could not complete it,
-- what authorized human or capable adapter action is required.
-
----
-
-## 9. Canonical resource integrity invariants
-
-All PM skills and adapters must preserve these rules:
-
-1. **EVERY PLANNING ITEM HAS EXACTLY ONE PARENT PACKAGE.**
-2. A Planning Item without its structural Parent relationship is orphaned and incomplete.
-3. A body reference to a parent does not substitute for the structural Parent relationship.
-4. Planning Items inherit Execution Placement and Milestone scope, if any, from their Parent Package.
-5. Child resources must not create a competing canonical Milestone or Execution Placement source of truth.
-6. **EVERY ACCEPTED PACKAGE HAS EXACTLY ONE EXECUTION PLACEMENT.**
-7. **EXECUTION PLACEMENT IS THE AUTHORITATIVE STRUCTURAL PLACEMENT FOR AN ACCEPTED PACKAGE; IT IS NOT A SECOND OWNERSHIP RECORD.**
-8. Valid Package Execution Placements are one Milestone or Project-level approved execution outside all Milestones.
-9. A Package must not simultaneously use Milestone placement and Project-level approved execution placement.
-10. An adapter must not maintain an independently authoritative Package ownership field that duplicates Execution Placement.
-11. **PROJECT BACKLOG ≠ STATUS: BACKLOG.**
-12. Project Backlog membership must have one explicit, authoritative representation.
-13. Project Backlog membership and accepted Package Execution Placement are mutually exclusive.
-14. Project Backlog membership must not be inferred solely from `Status = Backlog`.
-15. Project Backlog membership must not be inferred solely from `Milestone = empty`.
-16. Project-level approved execution must not be inferred solely from `Milestone = empty`.
-17. `Discovered In` is provenance, not ownership.
-18. Parent / Child and Dependency relationships are different and must not be substituted for each other.
-19. Resource creation is incomplete until required relationships and metadata are persisted and verified.
-20. An adapter that cannot complete required resource integrity must report `PARTIAL` or `FAILED`, not success.
-21. Technical storage convenience must not override the canonical structural relationship model.
-22. Moving work between Project Backlog, Milestone execution, and Project-level approved execution is a governed placement mutation, not an ordinary workflow Status transition.
+- 已建立哪些內容；
+- 還缺少哪些內容；
+- adapter 為什麼無法完成；
+- 需要哪個 authorized human 或 capable adapter action。
 
 ---
 
-## 10. Initial GitHub mapping
+## 9. Canonical 資源完整性不變條件
 
-The canonical model is product-independent. The initial GitHub implementation is expected to map resources as follows:
+所有 PM skills 與 adapters 都必須維持：
 
-| Canonical resource / relation | Initial GitHub representation | Authority note |
+1. **每個 Planning Item 必須且只能有一個 Parent Package。**
+2. 沒有 structural Parent relationship 的 Planning Item 是 orphan 且建立未完成。
+3. Issue body 的 parent 文字不能取代 structural Parent relationship。
+4. Planning Item 從 Parent Package 繼承 Execution Placement，以及存在時的 Milestone Scope。
+5. Child resource 不得建立競爭性的 canonical Milestone 或 Execution Placement source of truth。
+6. **每個已接受 Package 必須且只能有一個 Execution Placement。**
+7. **Execution Placement 是已接受 Package 的 authoritative structural placement；它不是第二份 ownership record。**
+8. 合法 Package Execution Placement 只有「某一個 Milestone」或「所有 Milestone 之外的專案層級已核准執行」。
+9. Package 不得同時具有 Milestone placement 與 Project-level approved execution placement。
+10. Adapter 不得維護另一個獨立 authoritative Package ownership field 去重複 Execution Placement。
+11. **Project Backlog ≠ `Status = Backlog`。**
+12. Project Backlog membership 必須有一個明確、authoritative 的表示方式。
+13. Project Backlog membership 與 accepted Package Execution Placement 必須互斥。
+14. 不得只由 `Status = Backlog` 推導 Project Backlog membership。
+15. 不得只由 `Milestone = empty` 推導 Project Backlog membership。
+16. 不得只由 `Milestone = empty` 推導 Project-level approved execution。
+17. `Discovered In` 是 provenance，不是 ownership。
+18. Parent / Child 與 Dependency relationship 不得互相替代。
+19. Resource creation 在必要 relationship 與 metadata persisted 並 verified 前都不算完成。
+20. Adapter 若無法完成必要 integrity，必須回報 `PARTIAL` 或 `FAILED`，不能回報 success。
+21. Storage tool 的技術便利性不能凌駕 canonical structural relationship model。
+22. Project Backlog、Milestone execution、Project-level approved execution 之間的移動屬於 governed placement mutation，不是普通 workflow Status transition。
+
+---
+
+## 10. 初始 GitHub Mapping
+
+Canonical model 不依賴特定產品。初始 GitHub implementation 預期如下：
+
+| Canonical resource / relation | 初始 GitHub 表示方式 | Authority 說明 |
 |---|---|---|
-| Project | GitHub Project | Management / projection layer |
+| Project | GitHub Project | 管理／projection layer |
 | Milestone | GitHub repository Milestone | Delivery-boundary resource |
-| Package — Execution Placement = Milestone | GitHub Issue, `Work Type = Package`, native Milestone set | Native Milestone is the authoritative Package Execution Placement; no separate Package ownership field is needed |
-| Package — Execution Placement = Project-level approved execution | GitHub Issue, `Work Type = Package`, no native Milestone plus adapter-defined explicit Execution Placement | The explicit placement representation is the authoritative Package structural placement; empty Milestone alone is insufficient |
-| Planning Item | GitHub Issue, `Work Type = Planning` | Must have native Parent/Sub-issue relationship to Package |
+| Package — Execution Placement = Milestone | GitHub Issue、`Work Type = Package`、native Milestone 已設定 | Native Milestone 是 authoritative Package Execution Placement；不需另建 Package ownership field |
+| Package — Execution Placement = 專案層級已核准執行 | GitHub Issue、`Work Type = Package`、native Milestone 為空，另有 adapter-defined explicit Execution Placement | 明確 placement representation 本身就是 authoritative Package structural placement；空 Milestone 本身不足以判斷 |
+| Planning Item | GitHub Issue、`Work Type = Planning` | 必須有 native Parent/Sub-issue relationship 指向 Package |
 | Parent Package | GitHub Parent issue / Sub-issue relationship | Authoritative structural decomposition relationship |
-| Checklist Item | Markdown task list inside Package / Planning Item | Lightweight, non-independent step |
-| Discovery | GitHub Issue, `Work Type = Discovery` | Project-level until triage decides resulting work placement |
-| Request | GitHub Issue, `Work Type = Request` | May later become Project Backlog or accepted work |
-| Spike | GitHub Issue, `Work Type = Spike` | Placement depends on approved context |
-| Project Backlog membership | Adapter-defined explicit Project representation | Must not be inferred from Status or empty Milestone |
-| Dependency | GitHub-supported dependency / linkage representation when available, otherwise adapter-managed explicit relation | Must remain distinct from structural placement and Parent/Sub-issue |
+| Checklist Item | Package / Planning Item 內的 Markdown task list | 輕量、非獨立步驟 |
+| Discovery | GitHub Issue、`Work Type = Discovery` | 在 triage 決定 resulting work placement 前維持 Project-level |
+| Request | GitHub Issue、`Work Type = Request` | 後續可以變成 Project Backlog 或 accepted work |
+| Spike | GitHub Issue、`Work Type = Spike` | Placement 依 approved context 決定 |
+| Project Backlog membership | Adapter-defined explicit Project representation | 不得由 Status 或空 Milestone 推導 |
+| Dependency | GitHub 支援的 dependency / linkage；若無則由 adapter 管理 explicit relation | 必須與 structural placement、Parent/Sub-issue 分離 |
 
-### 10.1 GitHub Milestone limitation
+### 10.1 GitHub Milestone 限制
 
-GitHub native Milestones are repository-scoped.
+GitHub native Milestone 是 repository-scoped。
 
-The initial implementation intentionally assumes a single-repository Milestone model. Cross-repository Milestone / initiative modeling is outside PLAN02 and requires an explicit later design rather than silently overloading the native GitHub Milestone concept.
+初始 implementation 刻意採 single-repository Milestone model。Cross-repository Milestone / initiative modeling 不屬於 PLAN02 範圍；若未來需要，必須另做明確設計，不能默默把 GitHub native Milestone overload 成不同概念。
 
-### 10.2 Project fields are projections, not alternate ownership records
+### 10.2 Project fields 是投影，不是第二份 ownership record
 
-Custom Project fields may expose derived values for filtering, grouping, automation, or explicit placement when no canonical native relation exists.
+Custom Project fields 可以提供 filtering、grouping、automation 所需的 derived value，或在沒有 canonical native relation 時提供 explicit placement。
 
-They must not create competing ownership truth when a canonical native relationship already exists.
+當 canonical native relationship 已存在時，custom field 不得變成競爭性的 ownership source of truth。
 
-For example:
+例如：
 
 ```text
 Planning Item Parent issue = authoritative
-Planning Item custom "Parent Package" text = non-authoritative duplicate and should be avoided
+Planning Item custom "Parent Package" text = non-authoritative duplicate，應避免使用
 ```
 
-For a Milestone Package:
+對 Milestone Package：
 
 ```text
 Native Milestone = authoritative Execution Placement
 Custom "Execution Placement" field = optional derived projection only
 ```
 
-For Project-level approved execution, GitHub has no native Milestone-equivalent relation. The adapter must therefore define one explicit Project-level representation and treat **that representation as the Package's canonical Execution Placement / structural placement**; it must not create a separate ownership record or infer the placement from an empty Milestone field.
+對專案層級已核准執行，GitHub 沒有 native Milestone-equivalent relation。Adapter 必須定義一個明確的 Project-level representation，並把**該 representation 本身當成 Package 的 canonical Execution Placement / structural placement**；不能再建立第二份 ownership record，也不能只從空 Milestone 推導 placement。
 
 ---
 
-## 11. Boundary with other core contracts
+## 11. 與其他核心 Contract 的責任邊界
 
-This document owns:
+本文件負責：
 
-- canonical resource hierarchy,
-- structural relationship taxonomy,
-- Package Execution Placement as the canonical Package structural placement relation,
-- Project Backlog placement semantics,
-- Planning Parent invariant,
-- orphan / incomplete resource handling,
-- resource creation integrity,
-- product-independent mapping requirements.
+- canonical resource hierarchy；
+- structural relationship taxonomy；
+- Package Execution Placement 作為 canonical Package structural placement relation；
+- Project Backlog placement semantics；
+- Planning Parent invariant；
+- orphan / incomplete resource handling；
+- resource creation integrity；
+- product-independent mapping requirement。
 
-It does **not** own:
+本文件**不負責**：
 
-- Discovery decision routing (`decision-model.md`, PLAN03),
-- skill-to-skill handoff schema (`handoff-contract.md`, PLAN04),
-- approval matrix (`approval-policy.md`, PLAN05),
-- workflow Status transitions / Action Owner / Transition Authority / Review contract (`workflow-contract.md`, PLAN07).
+- Discovery decision routing（`decision-model.md`，PLAN03）；
+- skill-to-skill handoff schema（`handoff-contract.md`，PLAN04）；
+- approval matrix（`approval-policy.md`，PLAN05）；
+- workflow Status transition / Action Owner / Transition Authority / Review contract（`workflow-contract.md`，PLAN07）。
 
-This separation is normative: downstream skills and adapters should reference the appropriate source of truth instead of duplicating these policies.
+這個責任切分具有 normative 性質：downstream skills 與 adapters 應引用正確的 source of truth，而不是各自複製一份相同 policy。
