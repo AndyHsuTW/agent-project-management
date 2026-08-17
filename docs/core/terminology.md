@@ -1,14 +1,14 @@
 # PM 核心術語
 
-> 狀態：M1 / PM-P01 / PLAN01 — 中文化修訂完成，待審查
+> 狀態：M1 / PM-P01 / PLAN01 — F-05 語言清理完成，待審查
 >
-> 用途：定義 AI 輔助專案管理 Skills 使用的權威術語。所有 PM Skills、轉接器（adapter）、範例與專案產出物都應一致使用這些術語；除非後續經核准的契約版本明確修改定義。
+> 用途：定義 AI 輔助專案管理技能套件使用的權威術語。所有 PM 技能、轉接器、範例與專案產出物都應一致使用這些術語；除非後續經核准的契約版本明確修改定義。
 >
-> 文件語言：以繁體中文為主。實際 GitHub 欄位值、狀態值、固定結果代碼，或難以精準翻譯的術語，保留英文原文或於首次出現時中英並列。
+> 文件語言：以繁體中文為主。只有實際 GitHub 欄位值、狀態值、固定結果代碼、檔案／API 識別值，或難以精準翻譯且需要與其他契約對照的術語，才保留英文原文或於首次出現時中英並列。
 
 ## 1. 術語原則
 
-1. 同一個術語在 PM Skill 套件中只能有一個權威（canonical）意義。
+1. 同一個術語在 PM 技能套件中只能有一個權威意義。
 2. 若相似概念會導致不同的專案管理決策，就必須明確區分。
 3. PM 語意不依賴 GitHub Projects、Plane、Jira、Markdown 等特定儲存工具。
 4. 發現新資訊不代表該工作已被接受進入執行範圍。
@@ -27,7 +27,7 @@
 
 被管理工作的最高層級範圍。
 
-專案提供持久的管理脈絡，里程碑（Milestone）、工作包（Package）、規劃項目（Planning Item）、發現（Discovery）、需求（Request）、探索任務（Spike）與專案待辦池（Project Backlog）都存在於這個脈絡中。
+專案提供持久的管理脈絡，里程碑、工作包、規劃項目、發現、需求、探索任務與專案待辦池都存在於這個脈絡中。
 
 專案也可以直接承接已接受的工作包；這類工作包的權威**執行歸屬（Execution Placement）**是「專案層級已核准執行」，且不屬於任何里程碑。
 
@@ -55,7 +55,7 @@
 範例：
 
 - `PM-P01 — Core Model & Contracts`
-- `M7-ARCH01 — Campaign identity ownership correction`
+- `M7-ARCH01 — 活動識別歸屬修正`
 
 ### 規劃項目（Planning Item）
 
@@ -87,11 +87,11 @@
 
 尚未被接受進入任何執行範圍的新需求、想法、功能、變更或一次性工作。
 
-需求經過分類判定（triage）後，可以被接受、保留在專案待辦池、不採納（Reject），或轉成其他工作資源。
+需求經過分類判定後，可以被接受、保留在專案待辦池、不採納，或轉成其他工作資源。
 
 ### 專案待辦池（Project Backlog）
 
-保存「可能有價值，但目前尚未承諾進入 active Milestone 或其他已核准執行範圍」工作的專案層級集合。
+保存「可能有價值，但目前尚未承諾進入進行中的里程碑或其他已核准執行範圍」工作的專案層級集合。
 
 專案待辦池是**範圍／承諾歸屬概念**，不是工作流程 `Status`。
 
@@ -161,7 +161,7 @@
 
 ### 審查結果（Review Result）
 
-審查者（Reviewer）針對驗收條件或其他審查目標給出的明確結果。審查結果是 Reviewer 的建議，**不是工作流程 `Status`**。
+審查者（Reviewer）針對驗收條件或其他審查目標給出的明確結果。審查結果是審查者的建議，**不是工作流程 `Status`**。
 
 固定結果代碼：
 
@@ -170,7 +170,7 @@
 
 `REVISE` 通常會讓工作從 `Review` 回到 `In Progress`；不需要額外建立 `Revision Required` Status。
 
-完整審查回覆、finding、重新審查（re-review）與狀態轉換矩陣由 `docs/core/workflow-contract.md` / PLAN07 定義。
+完整審查回覆、審查發現、重新審查與狀態轉換矩陣由 `docs/core/workflow-contract.md` / PLAN07 定義。
 
 ---
 
@@ -180,7 +180,7 @@
 
 被追蹤工作項目目前所在的工作流程狀態。
 
-M1 權威 Status 值：
+M1 權威 `Status` 值：
 
 - **`Backlog`** — 已追蹤，但目前尚未準備好執行。
 - **`Ready`** — 已接受且現在可以開始。
@@ -189,23 +189,23 @@ M1 權威 Status 值：
 - **`Review`** — 實作或文件已完成，等待驗證或接受。
 - **`Done`** — 所需驗收已完成，工作結束。
 
-Status 不代表範圍、承諾、優先級、執行歸屬，也不代表具有修改狀態的權限。已經屬於里程碑的工作包在等待執行時，仍可以合法處於 `Status = Backlog`。
+`Status` 不代表範圍、承諾、優先級、執行歸屬，也不代表具有修改狀態的權限。已經屬於里程碑的工作包在等待執行時，仍可以合法處於 `Status = Backlog`。
 
 ### 行動負責角色（Action Owner）
 
-工作項目處於某個 Status 時，預期執行下一個有效動作的角色。
+工作項目處於某個 `Status` 時，預期執行下一個有效動作的角色。
 
 > 行動負責角色回答：**現在輪到誰行動？**
 
-行動負責角色不一定等於 GitHub assignee、Issue 建立者、結構擁有者或目前查看者。Status 對 Action Owner 的權威對應由 PLAN07 定義。
+行動負責角色不一定等於 GitHub 指派人（Assignee）、Issue 建立者、結構擁有者或目前查看者。`Status` 對行動負責角色的權威對應由 PLAN07 定義。
 
 ### 狀態轉換權限（Transition Authority）
 
-依角色或政策，被允許執行某一條工作流程 Status transition 的權限。
+依角色或政策，被允許執行某一條工作流程狀態轉換的權限。
 
-> 狀態轉換權限回答：**誰有權把這個工作從目前 Status 切換到目標 Status？**
+> 狀態轉換權限回答：**誰有權把這個工作從目前 `Status` 切換到目標 `Status`？**
 
-技術上可以編輯 GitHub Project 欄位，不代表具有 Transition Authority。完整狀態轉換矩陣由 PLAN07 定義。
+技術上可以編輯 GitHub Project 欄位，不代表具有狀態轉換權限。完整狀態轉換矩陣由 PLAN07 定義。
 
 ### 優先級（Priority）
 
@@ -219,9 +219,9 @@ Status 不代表範圍、承諾、優先級、執行歸屬，也不代表具有�
 
 ### 執行順序（Sequence）
 
-同層級工作包或其他明確排序資源之間的預定相對執行位置。Sequence 是可調整的規劃中繼資料；Package ID 不因 Sequence 改變而改名。
+同層級工作包或其他明確排序資源之間的預定相對執行位置。`Sequence` 是可調整的規劃中繼資料；工作包 ID 不因 `Sequence` 改變而改名。
 
-> **Package ID ≠ 執行順序（PACKAGE ID ≠ EXECUTION ORDER）**
+> **工作包 ID ≠ 執行順序（PACKAGE ID ≠ EXECUTION ORDER）**
 
 ---
 
@@ -234,18 +234,18 @@ Status 不代表範圍、承諾、優先級、執行歸屬，也不代表具有�
 對已接受工作而言，工作包有兩條合法的權威執行歸屬路徑：
 
 ```text
-Project
-├─ Milestone
-│  └─ Package
-│     └─ Planning Item
-│        └─ Checklist Item
+專案（Project）
+├─ 里程碑（Milestone）
+│  └─ 工作包（Package）
+│     └─ 規劃項目（Planning Item）
+│        └─ 清單項目（Checklist Item）
 │
-└─ Package [專案層級已核准執行]
-   └─ Planning Item
-      └─ Checklist Item
+└─ 工作包（Package）[專案層級已核准執行]
+   └─ 規劃項目（Planning Item）
+      └─ 清單項目（Checklist Item）
 ```
 
-已接受工作包的 incoming structural relation 就是它的**執行歸屬（Execution Placement）**；`Package → Planning Item → Checklist Item` 則是父／子結構拆解。
+指向已接受工作包的結構關係就是它的**執行歸屬**；`Package → Planning Item → Checklist Item` 則是父／子結構拆解。
 
 發現不會因為是在某個里程碑中被發現，就自動成為該里程碑的子項目。
 
@@ -258,18 +258,18 @@ Project
 每個已接受工作包必須且只能有一個執行歸屬：
 
 ```text
-Milestone:<id> → Package
+里程碑（Milestone）:<id> → 工作包（Package）
 ```
 
 或：
 
 ```text
-Project → Package [專案層級已核准執行]
+專案（Project） → 工作包（Package）[專案層級已核准執行]
 ```
 
 對工作包而言：
 
-> **Execution Placement = authoritative structural placement**
+> **執行歸屬 = 唯一權威結構歸屬。**
 
 執行歸屬**不是第二份結構歸屬紀錄**。轉接器不得另外維護一份同樣具有權威性的 `Package Owner`、`Structural Owner` 或其他重複表示相同歸屬的關係。
 
@@ -281,19 +281,19 @@ Project → Package [專案層級已核准執行]
 
 結構上直接擁有某一個規劃項目的唯一工作包。
 
-對 `Work Type = Planning` 而言，Parent Package 為必填且唯一。
+對 `Work Type = Planning` 而言，父工作包為必填且唯一。
 
-> **每個 Planning Item 必須且只能有一個 Parent Package。**
+> **每個規劃項目必須且只能有一個父工作包。**
 
 Issue body 中的 `Parent Package: #1` 文字只是文件說明，不能取代真正的父子結構關係。
 
 ### 發現於（Discovered In）
 
-紀錄 Discovery 是在哪個 Project、Milestone、Package、Planning Item、執行、審查或 incident activity 中被發現的來源脈絡（provenance）。
+紀錄發現是在哪個專案、里程碑、工作包、規劃項目、執行、審查或事件處理活動中被發現的來源脈絡。
 
 `Discovered In` 不定義範圍歸屬，也不定義執行歸屬。
 
-> **在 Milestone 中發現 ≠ 屬於該 Milestone（FOUND DURING MILESTONE ≠ BELONGS TO MILESTONE）**
+> **在里程碑中發現 ≠ 屬於該里程碑（FOUND DURING MILESTONE ≠ BELONGS TO MILESTONE）**
 
 ### 相依關係（Dependency）
 
@@ -305,7 +305,7 @@ Issue body 中的 `Parent Package: #1` 文字只是文件說明，不能取代�
 
 決定某個資源在權威 PM 模型中正式屬於哪裡的結構關係。
 
-結構歸屬必須有單一權威來源（source of truth）。對已接受工作包而言，這份來源就是執行歸屬；衍生中繼資料不得形成互相矛盾的結構歸屬紀錄。
+結構歸屬必須有單一權威來源。對已接受工作包而言，這份來源就是執行歸屬；衍生中繼資料不得形成互相矛盾的結構歸屬紀錄。
 
 ---
 
@@ -313,7 +313,7 @@ Issue body 中的 `Parent Package: #1` 文字只是文件說明，不能取代�
 
 ### 建議（Recommendation）
 
-Agent 依據現有證據提出的專案管理建議。除非政策明確允許自主執行，Recommendation 本身不等於已核准決策。
+代理（Agent）依據現有證據提出的專案管理建議。除非政策明確允許自主執行，建議本身不等於已核准決策。
 
 ### 核准（Approval）
 
@@ -321,9 +321,9 @@ Agent 依據現有證據提出的專案管理建議。除非政策明確允許�
 
 ### 人工核准關卡（Human Approval Gate）
 
-在適用的人類授權要求完成前，阻止 Agent 執行受治理變更的政策邊界。
+在適用的人類授權要求完成前，阻止代理執行受治理變更的政策邊界。
 
-本文件只定義術語。權威 approval matrix 與自主動作政策由 `docs/core/approval-policy.md` / PLAN05 定義。
+本文件只定義術語。權威核准矩陣與自主動作政策由 `docs/core/approval-policy.md` / PLAN05 定義。
 
 ---
 
@@ -331,53 +331,53 @@ Agent 依據現有證據提出的專案管理建議。除非政策明確允許�
 
 | 概念 A | 概念 B | 權威邊界 |
 |---|---|---|
-| Milestone | Package | Milestone 是交付邊界；Package 是可追蹤的已接受工作單位。 |
-| Package | Execution Placement | Package 是工作資源；Execution Placement 說明它正式屬於哪個已核准執行範圍。 |
-| Execution Placement | Ownership | 對已接受 Package 而言，Execution Placement 就是權威結構歸屬，而不是額外的一份紀錄。 |
-| Package | Planning Item | Package 是穩定工作單位；Planning Item 是其可獨立追蹤的拆解。 |
-| Planning Item | Parent Package | 每個 Planning Item 必須且只能屬於一個 Parent Package。 |
-| Planning Item | Checklist Item | Planning Item 可有獨立生命週期；Checklist Item 是輕量細節。 |
-| Discovery | 已接受工作 | Discovery 保存資訊；triage 決定是否接受為工作。 |
-| Request | Project Backlog | Request 是新提出工作；Project Backlog 保存有價值但尚未承諾的工作。 |
-| Project Backlog | `Status = Backlog` | Project Backlog 描述承諾／歸屬；`Status = Backlog` 描述工作流程準備程度。 |
-| Project Backlog | Execution Placement | Project Backlog 位於已核准執行範圍之外；Execution Placement 適用於已接受 Package。 |
-| Scope Change | Interruption | Scope Change 修改目前 Milestone 範圍；Interruption 改變立即執行優先順序，但目前 Milestone 範圍不變。 |
-| Scope Change | Spike | Scope Change 是已有足夠證據後的決策；Spike 用來取得證據。 |
-| Project Backlog | Reject | Project Backlog 保存可能有價值的工作；Reject 則停止把它當成可執行工作追蹤。 |
-| Status | Action Owner | Status 描述工作流程狀態；Action Owner 說明現在誰應該行動。 |
-| Action Owner | Transition Authority | Action Owner 說明誰應行動；Transition Authority 說明誰有權切換狀態。 |
-| Status | Priority | Status 是生命週期狀態；Priority 是相對重要性。 |
-| Priority | Urgency | Priority 是相對排序；Urgency 是時間敏感度。 |
-| Priority | Sequence | Priority 影響偏好；Sequence 記錄預定順序。 |
-| Review Result | Status | Review Result 是審查結果；Status 是工作流程狀態。 |
-| Exit Criteria | Acceptance Criteria | Exit Criteria 決定 Milestone 能否結束；Acceptance Criteria 驗證特定工作。 |
-| Parent / Child | Dependency | Parent / Child 是結構拆解；Dependency 是執行限制。 |
-| Discovered In | Ownership | Discovered In 記錄來源脈絡；Ownership 決定正式結構歸屬。 |
-| Package ID | Sequence | ID 是穩定識別；Sequence 是可變動順序。 |
+| 里程碑 | 工作包 | 里程碑是交付邊界；工作包是可追蹤的已接受工作單位。 |
+| 工作包 | 執行歸屬 | 工作包是工作資源；執行歸屬說明它正式屬於哪個已核准執行範圍。 |
+| 執行歸屬 | 結構歸屬 | 對已接受工作包而言，執行歸屬就是權威結構歸屬，而不是額外的一份紀錄。 |
+| 工作包 | 規劃項目 | 工作包是穩定工作單位；規劃項目是其可獨立追蹤的拆解。 |
+| 規劃項目 | 父工作包 | 每個規劃項目必須且只能屬於一個父工作包。 |
+| 規劃項目 | 清單項目 | 規劃項目可有獨立生命週期；清單項目是輕量細節。 |
+| 發現 | 已接受工作 | 發現保存資訊；分類判定決定是否接受為工作。 |
+| 需求 | 專案待辦池 | 需求是新提出工作；專案待辦池保存有價值但尚未承諾的工作。 |
+| 專案待辦池 | `Status = Backlog` | 專案待辦池描述承諾／歸屬；`Status = Backlog` 描述工作流程準備程度。 |
+| 專案待辦池 | 執行歸屬 | 專案待辦池位於已核准執行範圍之外；執行歸屬適用於已接受工作包。 |
+| 範圍變更 | 中斷工作 | 範圍變更修改目前里程碑範圍；中斷工作改變立即執行優先順序，但目前里程碑範圍不變。 |
+| 範圍變更 | 探索任務 | 範圍變更是已有足夠證據後的決策；探索任務用來取得證據。 |
+| 專案待辦池 | 不採納 | 專案待辦池保存可能有價值的工作；不採納則停止把它當成可執行工作追蹤。 |
+| 狀態 | 行動負責角色 | 狀態描述工作流程狀態；行動負責角色說明現在誰應該行動。 |
+| 行動負責角色 | 狀態轉換權限 | 行動負責角色說明誰應行動；狀態轉換權限說明誰有權切換狀態。 |
+| 狀態 | 優先級 | 狀態是生命週期狀態；優先級是相對重要性。 |
+| 優先級 | 緊急度 | 優先級是相對排序；緊急度是時間敏感度。 |
+| 優先級 | 執行順序 | 優先級影響偏好；執行順序記錄預定順序。 |
+| 審查結果 | 狀態 | 審查結果是審查結果；狀態是工作流程狀態。 |
+| 結束條件 | 驗收條件 | 結束條件決定里程碑能否結束；驗收條件驗證特定工作。 |
+| 父／子關係 | 相依關係 | 父／子關係是結構拆解；相依關係是執行限制。 |
+| 發現於 | 結構歸屬 | 發現於記錄來源脈絡；結構歸屬決定正式結構位置。 |
+| 工作包 ID | 執行順序 | ID 是穩定識別；執行順序是可變動順序。 |
 
 ---
 
 ## 10. 權威不變條件（Invariants）
 
-除非後續經核准的契約版本明確修改，所有 PM Skills 都必須維持：
+除非後續經核准的契約版本明確修改，所有 PM 技能都必須維持：
 
 1. **發現 ≠ 接受為工作（DISCOVER ≠ ACCEPT）**
 2. **緊急 ≠ 屬於目前範圍（URGENT ≠ IN SCOPE）**
-3. **在 Milestone 中發現 ≠ 屬於該 Milestone**
+3. **在里程碑中發現 ≠ 屬於該里程碑**
 4. **未知 ≠ 立即實作（UNKNOWN ≠ IMPLEMENT NOW）**
-5. **Package ID ≠ 執行順序**
-6. **Project Backlog ≠ `Status = Backlog`**
-7. **每個 Planning Item 必須且只能有一個 Parent Package。**
-8. **每個已接受 Package 必須且只能有一個 Execution Placement。**
-9. **Execution Placement 是已接受 Package 的權威結構歸屬；不是第二份 Ownership record。**
-10. Agent 不得默默引入 Scope Change。
-11. 不能只因為工作很緊急，就把 Interruption 表示成 Scope Change。
-12. Planning Item 不得重複維護可由 Parent Package 繼承的權威 Milestone / Execution Placement 歸屬。
-13. Recommendation 與 Approval 是不同概念。
-14. Review Result 與工作流程 Status 是不同概念。
-15. Status、Priority、Urgency、Sequence、Scope、Execution Placement 是不同的管理維度。
-16. Status transition 必須遵守 Transition Authority；技術上的 edit access 不代表 workflow authority。
-17. 在必要結構關係與 Project 中繼資料尚未建立完成前，不得回報資源建立成功；若無法完成，必須明確回報 partial failure。
+5. **工作包 ID ≠ 執行順序**
+6. **專案待辦池 ≠ `Status = Backlog`**
+7. **每個規劃項目必須且只能有一個父工作包。**
+8. **每個已接受工作包必須且只能有一個執行歸屬。**
+9. **執行歸屬是已接受工作包的唯一權威結構歸屬；不是第二份結構歸屬紀錄。**
+10. 代理不得默默引入範圍變更。
+11. 不能只因為工作很緊急，就把中斷工作表示成範圍變更。
+12. 規劃項目不得重複維護可由父工作包繼承的權威里程碑／執行歸屬。
+13. 建議與核准是不同概念。
+14. 審查結果與工作流程 `Status` 是不同概念。
+15. `Status`、優先級、緊急度、執行順序、範圍、執行歸屬是不同的管理維度。
+16. 狀態轉換必須遵守狀態轉換權限；技術上的編輯權限不代表工作流程權限。
+17. 在必要結構關係與 Project 中繼資料尚未建立完成前，不得回報資源建立成功；若無法完成，必須明確回報部分失敗。
 
 ---
 
@@ -389,23 +389,23 @@ Agent 依據現有證據提出的專案管理建議。除非政策明確允許�
 
 | 權威概念 | 初始 GitHub 表示方式 |
 |---|---|
-| Project | GitHub Project |
-| Milestone | GitHub Milestone |
-| Package | GitHub Issue + `Work Type = Package` |
-| Package 的 Execution Placement = Milestone | GitHub 原生 Milestone 關係 |
-| Package 的 Execution Placement = 專案層級已核准執行 | 轉接器定義的明確 Project-level representation；不能只靠空 Milestone 判斷 |
-| Planning Item | GitHub Sub-issue + `Work Type = Planning` |
-| Parent Package | GitHub Parent issue relationship |
-| Checklist Item | Markdown task item |
-| Project Backlog | 轉接器定義的明確 retained-work placement |
-| Status | GitHub Project `Status` field |
-| Action Owner | 工作流程契約／可選的轉接器投影 |
-| Transition Authority | 工作流程契約／政策；不能從 GitHub UI edit permission 推導 |
-| Priority | GitHub Project `Priority` field |
-| Sequence | GitHub Project `Sequence` number field |
-| Dependency | GitHub 支援的 linkage，或由轉接器管理的明確關係 |
+| 專案 | GitHub Project |
+| 里程碑 | GitHub Milestone |
+| 工作包 | GitHub Issue + `Work Type = Package` |
+| 工作包的執行歸屬 = 里程碑 | GitHub 原生 Milestone 關係 |
+| 工作包的執行歸屬 = 專案層級已核准執行 | 轉接器定義的明確專案層級表示方式；不能只靠空 Milestone 判斷 |
+| 規劃項目 | GitHub Sub-issue + `Work Type = Planning` |
+| 父工作包 | GitHub Parent issue 關係 |
+| 清單項目 | Markdown task item |
+| 專案待辦池 | 轉接器定義的明確保留工作歸屬 |
+| 狀態 | GitHub Project `Status` 欄位 |
+| 行動負責角色 | 工作流程契約／可選的轉接器投影 |
+| 狀態轉換權限 | 工作流程契約／政策；不能從 GitHub UI 編輯權限推導 |
+| 優先級 | GitHub Project `Priority` 欄位 |
+| 執行順序 | GitHub Project `Sequence` 數值欄位 |
+| 相依關係 | GitHub 支援的連結關係，或由轉接器管理的明確關係 |
 
-這些對應不會重新定義權威 PM 意義；完整 mapping integrity 由 PLAN02 與後續 GitHub 轉接器負責。
+這些對應不會重新定義權威 PM 意義；完整對應完整性規則由 PLAN02 與後續 GitHub 轉接器負責。
 
 ---
 
@@ -415,8 +415,8 @@ Agent 依據現有證據提出的專案管理建議。除非政策明確允許�
 
 1. 指出新增或修改的術語；
 2. 說明原本的模糊或不足；
-3. 評估對既有 PM Skills 與轉接器的相容性影響；
+3. 評估對既有 PM 技能與轉接器的相容性影響；
 4. 必要時同步更新相關權威契約；
 5. 保留專案歷史，不得默默重新解讀已接受的舊紀錄。
 
-本文件是 M1 的 terminology source of truth，直到被後續經核准的版本取代。
+本文件是 M1 的術語唯一權威來源，直到被後續經核准的版本取代。
